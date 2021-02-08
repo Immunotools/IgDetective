@@ -31,7 +31,7 @@ For V and J genes
 1. `nonamer index` : starting index of the RSS nonamer
 1. `heptamer ` :  RSS heptamer sequence
 1. `nonamer ` :  RSS nonamer sequence
-1. `best aligned human gene ` :  The human gene with which the predicted gene best aligns with, measured as percent identity. The human V(J) genes are listed in `datafiles/human_V(human_J).fasta`.
+1. `best aligned human gene ` :  The human gene with which the predicted gene best aligns with, measured as percent identity. The human V(J) genes are listed in `datafiles/human_V(human_J).fasta`
 1 `alignment direction` : Direction of the above mentioned alignment
 1. `algnment PI` : Percent identity of the above mentioned alignment
 1. `longest common k-mer` : Longest common substring shared by both the best aligned human gene and the predicted gene
