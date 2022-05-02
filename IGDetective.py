@@ -323,7 +323,7 @@ def get_alignments(contig,gene_type,alig_scheme,pass3):
             if 'N' in gene_superstr:
                 local_alig_len.append(-1)
                 perc_identities.append(-1)
-                perc_identities_2.append(-1)
+                #perc_identities_2.append(-1)
                 alignments.append("N_elim")
                 gene_strands.append("N_elim")
                 genes.append("N_elim")
