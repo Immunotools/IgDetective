@@ -1,26 +1,23 @@
 # IgDetective
-a tool for annotation of immunoglobulin genes (V, D and J genes) in genome assemblies
+a tool for annotation of variable (V), diversity (D), and joining (J) immunoglobulin genes in genomes.
 
 ## System Requirements
-* Anaconda package manager 4.8.4 or higher
-* Bioconda channel for Anaconda. See [bioconda setup](https://bioconda.github.io/user/install.html#install-conda) for setup guide
+* Anaconda package manager 4.8.4 or higher. To install Bioconda, see the [setup guide](https://bioconda.github.io/user/install.html#install-conda).
+* Minimap2. To install Minimap2, see the [setup guide](https://anaconda.org/bioconda/minimap2).
 
 ## Usage
+IGDetective takes a genome in FASTA format as an input and operates in three stages:
+* Finding contigs containing IG gene matches. This step is performed using minimap2 and usually takes several minutes. 
+* Detecting candidate RSSs based on similarity to RSSs of known reference species. 
+* Detects candidates of IG genes flanking candidate RSSs. 
 
-IGDetective operates in two stages. It first establishes candidate RSSs based on similarity to RSSs' of a known reference species. After this step it detects genes flanking candidate RSSs. Both stages are run through the python script in IGDetective.py :  `python3 IGDetective.py -h -i -o -r -m -g` . The flags are explained below:
+To run IGDetective, type:
+```
+python run_iterative_igdetective.py genome.fasta output_dir
+```
+Please note that **IGDetective overwrites the output directory**, so make sure that it does not contain important files.
 
-* `-h , --help` : Get information on usage and flags
-* `-i, --input_file` : provide an input fasta file containing a genome assembly for gene detection
-* `-o, --output_directory` : (optional) provide an output directory for generated results. Default location is in the parent directory of the input file
-* `-r, --rss_only` : (optional) switch to RSS finding mode
-* `-m, --multi_process` : (optional) provide number of parallel processing units if available. Default is 1
-* `-g, --genes_type` : (optional) specify which genes (v,d,j) to find. Eg: vdj, d, vj, jv. Default is vdj
-
-## Examples
-
-We have provided 3 sample input species - human (Homo Sapiens), cow (Bos Taurus) and mouse(Mus Musculus) IGH assemblies  in the *example/* directory. We have run IGDetective on the human instance using the command `python3 IGDetective.py -i examples/human.fasta -g vdj-m 20` and generated an annotation of the V,D and J genes in the similarly named directory. 
-
-## Generated result
+## Output format
 
 The predicted V(D,J) genes are listed in a comma seperated file, `genes_V(D,J).tsv`  in the output directory. 
 The headers are explained below. Note that all indexing is done with respect the the forward strand inputted by the user : 
@@ -52,5 +49,4 @@ For D genes
 1. `gene sequence` : Nucleotide sequence of predicted gene
 
 ## Development
-
-IGDetective is still in its nascent stages with room for improvement. Please send your suggestions or any bugs detected to vsirupur@ucsd.edu
+IGDetective is still in its nascent stages with room for improvement. Please report any bugs to GitHub. We welcome your comments and suggestions on IGDetective development. Please feel free to send it to Vikram Sirupurapu (vsirupur@ucsd.edu) and/or Yana Safonova (ysafonova@cs.jhu.edu).
