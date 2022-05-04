@@ -63,6 +63,7 @@ def IdentifyIGContigs(alignment_dir, output_dir, genome_fasta):
     return igcontig_dir
 
 def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
+    print('==== Running IgDetective...')
     txt = os.path.join(igcontig_dir, '__summary.txt')
     df = pd.read_csv(txt, sep = '\t')
     igh_df = df.loc[df['Locus'] == locus]
@@ -89,7 +90,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     fh.close()
     # running IgDetective
     igdetective_dir = os.path.join(output_dir, 'predicted_genes')
-    command_line = 'python IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1'
+    command_line = 'python py/IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1'
     print('Running: ' + command_line)
     os.system(command_line)
 
