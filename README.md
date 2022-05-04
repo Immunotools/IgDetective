@@ -12,8 +12,9 @@ IGDetective operates in two stages. It first establishes candidate RSSs based on
 * `-h , --help` : Get information on usage and flags
 * `-i, --input_file` : provide an input fasta file containing a genome assembly for gene detection
 * `-o, --output_directory` : (optional) provide an output directory for generated results. Default location is in the parent directory of the input file
-* `-r, --reference_matrix` : (optional) provide alternate reference species. Default is *combined* reference
+* `-r, --rss_only` : (optional) switch to RSS finding mode
 * `-m, --multi_process` : (optional) provide number of parallel processing units if available. Default is 1
+* `-g, --genes_type` : (optional) specify which genes (v,d,j) to find. Eg: vdj, d, vj, jv. Default is vdj
 
 ## Examples
 
