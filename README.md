@@ -49,4 +49,6 @@ For D genes
 1. `gene sequence` : Nucleotide sequence of predicted gene
 
 ## Development
-IGDetective is still in its nascent stages with room for improvement. Please report any bugs to GitHub. We welcome your comments and suggestions on IGDetective development. Please feel free to send it to Vikram Sirupurapu (vsirupur@ucsd.edu) and/or Yana Safonova (ysafonova@cs.jhu.edu).
+IGDetective is still in its nascent stages with room for improvement. Please report any bugs to GitHub. 
+
+We also welcome your comments and suggestions on IGDetective. Please feel free to send it to Vikram Sirupurapu (vsirupur@ucsd.edu) and/or Yana Safonova (ysafonova@cs.jhu.edu).
