@@ -366,10 +366,9 @@ def align_fragment_to_genes(fragments, canon_genes, scoring_scheme, gene):
         for j in range(0,len(canon_genes)):
             pi_mat[i][j] = pis.pop(0)
             alig_len_mat[i][j] = alignment_lens.pop(0)
-            
     return pi_mat , alig_len_mat
 
-
+  
 #Evaluate and print genes
 def extract_genes(parent_seq, gene, rss_idx, fragments, fragment_alignments):
     final_genes = []
@@ -386,8 +385,7 @@ def extract_genes(parent_seq, gene, rss_idx, fragments, fragment_alignments):
                         parent_seq[contig][e[2]:e[2]+7].reverse_complement().upper(), parent_seq[contig][e[3]:e[3]+9].reverse_complement().upper()
                         gs, ge ,predicted_gene =  e[2]+7, e[0]-1, parent_seq[contig][e[2]+7:e[0]].reverse_complement().upper()      
                     final_genes.append([contig, strand, e[0],e[1], lh, ln, e[2],e[3],rh,rn,gs, ge, predicted_gene])
-    
-    
+        
     elif gene == V or gene == J:
         for strand in fragment_alignments:
             for contig in fragment_alignments[strand]:
