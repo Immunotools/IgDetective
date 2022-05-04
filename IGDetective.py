@@ -23,8 +23,10 @@ REV = '-'
 GENE_TYPES = [V,D,J]
 GENE_TYPES_TOFIND = [V,D,J]
 SPACER_LENGTH = {V:23 , DL:12 , DR:12 , J:23}
-GENE_LENGTH = {V: 350 , J: 70}
+GENE_LENGTH = {V: 350 , J: 70, D:150}
 ALIGNMENT_EXTENSION = {V:REV , J:FWD, D:None}
+PI_CUTOFF = {'strict' : {V: 70, J: 70} , 'relax': {V: 60 ,J: 65}}
+MAXK_CUTOFF = {V: 15 , J: 11}
 
 ALIGNER = Align.PairwiseAligner()
 ALIGNER.mode = 'local'
@@ -186,7 +188,7 @@ def get_contigwise_rss(sig_type,strand,parent_seq):
     return rss_resultset
 
 #D_left(D_right) idx is of the form "input_rss_info['D_left(D_right)']"
-def combine_D_RSS(D_left_idx , D_right_idx, input_seq_dict, strand, Dgene_len = 150):
+def combine_D_RSS(D_left_idx , D_right_idx, input_seq_dict, strand, Dgene_len = GENE_LENGTH[D]):
     rss_resultset = {contigs : [] for contigs in input_seq_dict.keys()}
     for contig in input_seq_dict:
         for dr in D_right_idx[contig]:
@@ -384,7 +386,50 @@ def extract_genes(parent_seq, gene, rss_idx, fragments, fragment_alignments):
                         parent_seq[contig][e[2]:e[2]+7].reverse_complement().upper(), parent_seq[contig][e[3]:e[3]+9].reverse_complement().upper()
                         gs, ge ,predicted_gene =  e[2]+7, e[0]-1, parent_seq[contig][e[2]+7:e[0]].reverse_complement().upper()      
                     final_genes.append([contig, strand, e[0],e[1], lh, ln, e[2],e[3],rh,rn,gs, ge, predicted_gene])
-                    
+    
+    
+    elif gene == V or gene == J:
+        for strand in fragment_alignments:
+            for contig in fragment_alignments[strand]:
+                r = rss_idx[strand][contig]
+                f = fragments[strand][contig]
+                c = list(canonical_genes[gene].keys()) 
+                for i,e in enumerate(fragment_alignments[strand][contig]):
+                    if e[1] >= PI_CUTOFF['strict'][gene] or (e[1] >= PI_CUTOFF['relax'][gene] and e[2] >= MAXK_CUTOFF[gene]):
+                        a = ComputeAlignment(f[i],canonical_genes[gene][c[e[0]]], ALIGNMENT_EXTENSION)
+                        splits = str(a[0]).split('\n')
+                        alig_direction = a[1]
+                        start,end = FindAlignmentRange(splits[1].upper(), splits[2].upper(), ALIGNMENT_EXTENSION[gene])
+                        
+                        if strand == FWD:
+                            if gene == V:
+                                ge = r[i][0] -1
+                                gs = r[i][0]- GENE_LENGTH[gene] + start
+                                predicted_gene = parent_seq[contig][gs:ge+1].upper()
+                            elif gene == J:
+                                gs = r[i][0] + 7
+                                ge = gs + end
+                                predicted_gene = parent_seq[contig][gs:ge].upper()
+                            h = parent_seq[contig][r[i][0]:r[i][0]+7].upper()
+                            n = parent_seq[contig][r[i][1]:r[i][1]+9].upper()
+
+                        elif strand == REV:
+                            if gene == V:
+                                gs = r[i][0] + 7
+                                ge = gs + GENE_LENGTH[gene] - start -1
+                                predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
+                            elif gene == J:
+                                ge = r[i][0] -1
+                                gs = r[i][0] - end
+                                predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
+                            h = parent_seq[contig][r[i][0]:r[i][0]+7].reverse_complement().upper()
+                            n = parent_seq[contig][r[i][1]:r[i][1]+9].reverse_complement().upper()
+                        hi = r[i][0]
+                        ni = r[i][1]
+                        human_neighbour = c[e[0]]
+                        
+                        final_genes.append([contig,strand,hi,ni,h,n,gs,ge,human_neighbour,alig_direction, int(round(e[1])), e[2] , predicted_gene])
+   
     return final_genes
 
 def print_predicted_genes(filepath, gene, predictions):
@@ -392,7 +437,11 @@ def print_predicted_genes(filepath, gene, predictions):
         detected_gene_info = [['reference contig', 'strand', 'left heptamer index' , 'left nonamer index' ,\
                                'left heptamer' , 'left nonamer', 'right heptamer index' , 'right nonamer index' ,\
                                'right heptamer' , 'right nonamer', 'start of gene', 'end of gene', 'gene sequence']]
-        detected_gene_info.extend(predictions)
+    else:
+         detected_gene_info = [['reference contig', 'strand', 'heptamer index' , 'nonamer index' ,\
+                               'heptamer' , 'nonamer', 'start of gene', 'end of gene','best aligned human gene', \
+                                'alignment direction', 'alignment PI', 'longest common k-mer','gene sequence']]
+    detected_gene_info.extend(predictions)
     with open(filepath, "w", newline="") as f:
         writer =csv.writer(f , delimiter = '\t')
         writer.writerows(detected_gene_info)
@@ -438,4 +487,11 @@ for gene in GENE_TYPES_TOFIND:
 print("Done")
 
 #Print genes to tsv file
-print_predicted_genes('{}/genes_{}.csv'.format(OUTPUT_PATH, D) , D, extract_genes(input_seq_dict, D, input_rss_info[D], None, None))
+for gene in GENE_TYPES_TOFIND:
+    if gene == D:
+        print_predicted_genes('{}/genes_{}.tsv'.format(OUTPUT_PATH, D) , D, extract_genes(input_seq_dict, D, input_rss_info[D], None, None))
+    else:
+        predictions = extract_genes(input_seq_dict, gene, input_rss_info[gene], s_fragments[gene], s_fragment_alignment[gene])
+        print_predicted_genes('{}/genes_{}.tsv'.format(OUTPUT_PATH, gene) , gene, predictions)
+
+print("Please see {}/ for gene predictions".format(OUTPUT_PATH))  
