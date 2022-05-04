@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import shutil
 import pandas as pd
 from Bio import SeqIO
@@ -7,6 +8,18 @@ from Bio import SeqIO
 sys.path.append('py')
 
 ref_gene_dir = 'datafiles/human_reference_genes'
+
+def CheckPythonVersionFatal():
+    if sys.version_info.major != 3:
+        print('ERROR: Python 3 was not found. Please install Python 3 and rerun IgDetective')
+        sys.exit(1)
+
+def CheckMinimapFatal():
+    try:
+        subprocess.call(['which', 'minimap2'])
+    except FileNotFoundError:
+        print("ERROR: minimap2 was not found. Please install minimap2 and rerun IgDetective")
+        sys.exit(1)
 
 def PrepareOutputDir(output_dir):
     if os.path.exists(output_dir):
@@ -25,8 +38,6 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 30000000):
         return (0, min(prefix_len + gap, seq_len))
     return (max(min_pos - gap, 0), seq_len)
 
-def CheckMinimapFatal():
-    return 
 
 def AlignIgGenes(genome_fasta, ig_gene_fasta, sam_file):
     os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null')
@@ -78,14 +89,15 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     fh.close()
     # running IgDetective
     igdetective_dir = os.path.join(output_dir, 'predicted_genes')
-    command_line = 'python IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 8'
+    command_line = 'python IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1'
     print('Running: ' + command_line)
     os.system(command_line)
 
 def main(genome_fasta, output_dir):
     #### preparation
+    CheckPythonVersionFatal()
+    CheckMinimapFatal()
     PrepareOutputDir(output_dir)
-    # check minimap
 
     #### running IG gene alignments
     alignment_dir = AlignReferenceGenes(genome_fasta, output_dir)
