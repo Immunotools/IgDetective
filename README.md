@@ -7,21 +7,22 @@ a tool for annotation of immunoglobulin genes (V, D and J genes) in genome assem
 
 ## Usage
 
-IGDetective operates in two stages. It first establishes candidate RSSs based on similarity to RSSs' of a known reference species. After this step it detects genes flanking candidate RSSs. Both stages are run through the python script in IGDetective.py :  `python3 IGDetective.py -h -i -o -r -m` . The flags are explained below:
+IGDetective operates in two stages. It first establishes candidate RSSs based on similarity to RSSs' of a known reference species. After this step it detects genes flanking candidate RSSs. Both stages are run through the python script in IGDetective.py :  `python3 IGDetective.py -h -i -o -r -m -g` . The flags are explained below:
 
 * `-h , --help` : Get information on usage and flags
 * `-i, --input_file` : provide an input fasta file containing a genome assembly for gene detection
 * `-o, --output_directory` : (optional) provide an output directory for generated results. Default location is in the parent directory of the input file
-* `-r, --reference_matrix` : (optional) provide alternate reference species. Default is *combined* reference
+* `-r, --rss_only` : (optional) switch to RSS finding mode
 * `-m, --multi_process` : (optional) provide number of parallel processing units if available. Default is 1
+* `-g, --genes_type` : (optional) specify which genes (v,d,j) to find. Eg: vdj, d, vj, jv. Default is vdj
 
 ## Examples
 
-We have provided 3 sample input species - human (Homo Sapiens), cow (Bos Taurus) and mouse(Mus Musculus) IGH assemblies  in the *example/* directory. We have run IGDetective on the cow instance using the command `python3 IGDetective.py -i examples/BosTaurus_igh_locus.fasta -m 20` and generated an annotation of the V,D and J genes in the similarly named directory. 
+We have provided 3 sample input species - human (Homo Sapiens), cow (Bos Taurus) and mouse(Mus Musculus) IGH assemblies  in the *example/* directory. We have run IGDetective on the human instance using the command `python3 IGDetective.py -i examples/human.fasta -g vdj-m 20` and generated an annotation of the V,D and J genes in the similarly named directory. 
 
 ## Generated result
 
-The predicted V(D,J) genes are listed in a comma seperated file, `V(D,J)_predicted_genes.csv`  in the output directory. 
+The predicted V(D,J) genes are listed in a comma seperated file, `genes_V(D,J).tsv`  in the output directory. 
 The headers are explained below. Note that all indexing is done with respect the the forward strand inputted by the user : 
 
 For V and J genes
