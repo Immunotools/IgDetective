@@ -324,7 +324,7 @@ def GetNumMatches(alignment, extend_alignment = None):
 
 #align 2 strings
 def ComputeAlignment(seq_A, seq_B, extend_alignment = None):
-    query = seq_A
+    query = Seq(str(seq_A).upper())
     query_rc = query.reverse_complement()
     alignment = ALIGNER.align(query, seq_B)[0]
     alignment_rc = ALIGNER.align(query_rc, seq_B)[0]

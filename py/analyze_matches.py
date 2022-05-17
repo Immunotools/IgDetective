@@ -218,11 +218,13 @@ xlabels = []
 for l in loci:
     for g in genes:
         xlabels.append(l + g)   
-plt.figure(figsize = (12, 8))
-plt.title(input_dir) 
-sns.heatmap(matrix, annot = np.array(annot_matrix), cmap = 'coolwarm', robust = True, fmt = '', xticklabels = xlabels, yticklabels = ylabels, cbar = False)
-plt.yticks(fontsize = 6)
-OutputToPdf(os.path.join(output_dir, '__summary.pdf'))
+
+if len(matrix) != 0:
+    plt.figure(figsize = (12, 8))
+    plt.title(input_dir) 
+    sns.heatmap(matrix, annot = np.array(annot_matrix), cmap = 'coolwarm', robust = True, fmt = '', xticklabels = xlabels, yticklabels = ylabels, cbar = False)
+    plt.yticks(fontsize = 6)
+    OutputToPdf(os.path.join(output_dir, '__summary.pdf'))
 
 summary_txt = os.path.join(output_dir, '__summary.txt')
 summary_fh = open(summary_txt, 'w')
