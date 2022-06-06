@@ -345,6 +345,8 @@ def align_fragment_to_genes(fragments, canon_genes, scoring_scheme, gene):
         for j in range(0,len(canon_genes)):
             seq_A = fragments[i]
             seq_B = canon_genes[j]
+            if len(seq_A) == 0:
+                seq_A = 'A' * len(seq_B) #canon_genes[j]
             parallel_alignments.append((seq_A,seq_B,ALIGNMENT_EXTENSION[gene]))
             
     p = Pool(NUM_THREADS)
