@@ -12,7 +12,8 @@ import numpy as np
 
 from multiprocessing import Pool
 
-#INITIALIZE VARIABLES
+
+#INITIALIZE VARIABLES, default = IGH
 V = 'V'
 D = 'D'
 J = 'J'
@@ -31,8 +32,11 @@ MAXK_CUTOFF = {V: 15 , J: 11}
 ALIGNER = Align.PairwiseAligner()
 ALIGNER.mode = 'local'
 
-
-
+def InitializeVariables(locus):
+    if locus == 'IGK':
+        SPACER_LENGTH = {V:12, DL:12, DR:12, J:23}
+    if locus = 'IGL':
+        SPACER_LENGTH = {V:23, DL:12, DR:12, J:12}    
 
 #READ DATAFILES
 try:
@@ -47,6 +51,7 @@ options = "hi:o:m:rg:"
 long_options = ["help","input_file=", "output_directory=", "multi_process=", "rss_only" , "genes_type="]
 force_output = True
 received_input = False
+LOCUS = 'IGH'
 RSS_MODE = False
 help_flag = False
 NUM_THREADS = 1
@@ -59,6 +64,7 @@ try:
             print("-h , --help : Get this message")
             print("-i, --input_file : provide a fasta file for gene detection")
             print("-o, --output_directory : (optional) provide an output directory for generated results. Default location is in the parent directory of the input file")
+            print("-l, --locus : immunoglobulin locus IGH, IGK, or IGL. Default is IGH")
             print("-m, --multi_process : (optional) provide number of parallel processing units if available. Default is 1")
             print("-r, --rss_only : (optional) switch to RSS finding mode")
             print("-g, --genes_type : (optional) specify which genes (v,d,j) to find. Eg: vdj, d, vj, jv. Default is vdj")
@@ -71,6 +77,13 @@ try:
         elif currentArgument in ("-o", "--output_directory"):
             OUTPUT_PATH = str(currentValue)
             force_output = False
+
+        elif currentArgument in ("-l", "--locus"):
+            if currentArgument not in ['IGH', 'IGK', 'IGL']:
+                print('Incorrect locus argument: ' + currentArgument)
+                sys.exit(1)
+            LOCUS = currentArgument
+            InitializeVariables(LOCUS)
 
         elif currentArgument in ("-m", "--multi_process"):
             NUM_THREADS = int(currentValue)
@@ -446,6 +459,8 @@ def print_predicted_genes(filepath, gene, predictions):
         writer =csv.writer(f , delimiter = '\t')
         writer.writerows(detected_gene_info)
 
+
+print("Finding immunoglobulin genes for locus " + LOCUS + '...')
 
 #FIND RSS IN INPUT FASTA
 print("Finding candidate RSS...",end =" ")

@@ -89,7 +89,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
         fh.write(seq[contig_range[0] : contig_range[1]] + '\n')
     fh.close()
     # running IgDetective
-    igdetective_dir = os.path.join(output_dir, 'predicted_genes')
+    igdetective_dir = os.path.join(output_dir, 'predicted_genes_' + locus)
     command_line = 'python py/IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1'
     print('Running: ' + command_line)
     os.system(command_line)
@@ -107,7 +107,9 @@ def main(genome_fasta, output_dir):
     igcontig_dir = IdentifyIGContigs(alignment_dir, output_dir, genome_fasta)
 
     #### running IgDetective
-    RunIgDetective(igcontig_dir, output_dir)
+    loci = ['IGH', 'IGK', 'IGL']
+    for locus in loci:
+        RunIgDetective(igcontig_dir, output_dir, locus)
 
 
 if __name__ == '__main__':
