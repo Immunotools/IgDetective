@@ -44,7 +44,7 @@ class Alignment:
     def Empty(self):
         return self.gene_seq == '' or self.gene_seq[0] == ' '
 
-def ComputeAlignment(query_list, gene_seqs):
+def ComputeAlignment(aligner, query_list, gene_seqs):
     best_alignment = ''
     best_num_matches = 0
     best_gene = ''
@@ -95,8 +95,9 @@ def main(genome_fasta, gene_fasta, output_dir):
     PrepareOutputDir(output_dir)
 
     print('Running minimap...')
+    print('Alignment of IG genes ' + gene_fasta + ' to ' + genome_fasta)
     sam_file = os.path.join(output_dir, 'alignment.sam')
-    os.system('minimap2 -a ' + genome_fasta + ' ' + gene_fasta + ' -o ' + sam_file)
+    os.system('minimap2 -a ' + genome_fasta + ' ' + gene_fasta + ' -o ' + sam_file + '> /dev/null 2>&1')
 
     print('Processing SAM file...')
     position_dict = ProcessSamFile(sam_file)
@@ -114,7 +115,7 @@ def main(genome_fasta, gene_fasta, output_dir):
     for r in SeqIO.parse(gene_fasta, 'fasta'):
         family = r.id.split('*')[0].split('-')[0].split('S')[0]
         if family not in processed_families:
-            r.seq = str(r.seq)
+            r.seq = str(r.seq).upper()
             genes.append(r)
             processed_families.add(family)
 
@@ -131,23 +132,23 @@ def main(genome_fasta, gene_fasta, output_dir):
         contig_seq = contig_dict[c_id]
         prev_pos = -1
         for pos in sorted(position_dict[c_id]):
-            print(pos)
+#            print(pos)
             if pos - prev_pos <= gene_len:
-                print('redundant position: ' + str(pos))
+#                print('redundant position: ' + str(pos))
                 continue
             fragment = contig_seq[max(0, pos - gene_len) : min(len(contig_seq), pos + gene_len)]
             fragment_rc = str(Seq(fragment).reverse_complement())
-            alignment = ComputeAlignment([fragment, fragment_rc], genes)
+            alignment = ComputeAlignment(aligner, [fragment, fragment_rc], genes)
             if alignment.Empty():
-                print('empty alignment')
+#                print('empty alignment')
                 continue
             aa_seq = str(Seq(alignment.gene_seq).translate())
             if aa_seq.find('*') != -1:
-                print('non-productive gene')
+#                print('non-productive gene')
                 continue
-            print('==== ' + c_id + ', pos: ' + str(pos) + ', gene: ' + alignment.gene_id + ', PI: ' + str(alignment.pi))
-            print(alignment.gene_seq)
-            print(aa_seq)
+#            print('==== ' + c_id + ', pos: ' + str(pos) + ', gene: ' + alignment.gene_id + ', PI: ' + str(alignment.pi))
+#            print(alignment.gene_seq)
+#            print(aa_seq)
             df['Contig'].append(c_id)
             df['Pos'].append(pos)
             df['Seq'].append(alignment.gene_seq)
@@ -169,6 +170,7 @@ def main(genome_fasta, gene_fasta, output_dir):
 if __name__ == '__main__':
     if len(sys.argv) != 4:
        print('Invalid arguments')
+       print('python extract_aligned_genes.py genome.fasta reference_IG_genes.fasta output_dir')
        sys.exit(1)
     genome_fasta = sys.argv[1]
     gene_fasta = sys.argv[2]
