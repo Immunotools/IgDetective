@@ -8,6 +8,7 @@ from Bio.Seq import Seq
 import numpy as np
 
 sys.path.append('py')
+import extract_aligned_genes as extr_genes
 
 ref_gene_dir = 'datafiles/human_reference_genes'
 
@@ -41,7 +42,7 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 10000000):
     return (max(min_pos - gap, 0), seq_len)
 
 def AlignIgGenes(genome_fasta, ig_gene_fasta, sam_file):
-    os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null')
+    os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null 2>&1')
 
 def AlignReferenceGenes(align_dir, genome_fasta, output_dir):
     ref_gene_dict = dict()
@@ -54,7 +55,8 @@ def AlignReferenceGenes(align_dir, genome_fasta, output_dir):
         AlignIgGenes(genome_fasta, ref_gene_dict[gene_type], os.path.join(align_dir, gene_type + '.sam'))
 
 def IdentifyIGContigs(igcontig_dir, alignment_dir, output_dir, genome_fasta):
-    os.system('python py/analyze_matches.py ' + alignment_dir + ' ' + igcontig_dir + ' ' + genome_fasta)
+    match_log = igcontig_dir + '.out'
+    os.system('python py/analyze_matches.py ' + alignment_dir + ' ' + igcontig_dir + ' ' + genome_fasta + ' > ' + match_log)
 
 def GetPositionRange(sorted_positions):
     if len(sorted_positions) == 1:
@@ -70,7 +72,7 @@ def GetPositionRange(sorted_positions):
     return start_pos, end_pos
 
 def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
-    print('==== Running IgDetective...')
+    print('==== Running RSS-based IgDetective for ' + locus + '...')
     txt = os.path.join(igcontig_dir, '__summary.txt')
     df = pd.read_csv(txt, sep = '\t')
     igh_df = df.loc[df['Locus'] == locus]
@@ -79,7 +81,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     contigs = set(igh_df['ContigID'])
     for c in contigs:
         c_df = igh_df.loc[igh_df['ContigID'] == c]
-        contig_fasta = os.path.join(igcontig_dir, locus + '_' + c + '.fasta')
+        contig_fasta = os.path.join(igcontig_dir, locus + '_' + str(c) + '.fasta')
         if not os.path.exists(contig_fasta):
             print('WARN: ' + contig_fasta + ' does not exist')
             continue
@@ -101,7 +103,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     igdetective_dir = os.path.join(output_dir, 'predicted_genes_' + locus)
     command_line = 'python py/IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1 -l ' + locus
     print('Running: ' + command_line)
-    os.system(command_line)
+    os.system(command_line + ' > ' + os.path.join(output_dir, 'predicted_genes_' + locus + '.out'))
 
 def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
     nucl_seqs = set()
@@ -121,7 +123,7 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
 def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_dir, gene_type, num_iter = 5):
     # aligning reference genes
     iter0_dir = os.path.join(output_dir, gene_type + '_iter0')
-    os.system('python py/extract_aligned_genes.py ' + genome_fasta + ' ' + ref_gene_fasta + ' ' + iter0_dir)
+    extr_genes.main(genome_fasta, ref_gene_fasta, iter0_dir)
     iter0_fasta = os.path.join(iter0_dir, 'genes.fasta')
     # combining genes
     combined_fasta = os.path.join(output_dir, gene_type + '_combined.fasta')
@@ -130,16 +132,21 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
     prev_iter_seqs = [r for r in SeqIO.parse(combined_fasta, 'fasta')]
     if len(prev_iter_seqs) == 0:
         return
+    print('# combined genes: ' + str(len(prev_iter_seqs)))
     prev_fasta = combined_fasta
     for i in range(num_iter):
         print('== Iteration ' + str(i + 1) + '...')
         iter_dir = os.path.join(output_dir, gene_type + '_iter' + str(i + 1))
-        os.system('python py/extract_aligned_genes.py ' + genome_fasta + ' ' + prev_fasta + ' ' + iter_dir)
+        extr_genes.main(genome_fasta, prev_fasta, iter_dir)
         curr_iter_fasta = os.path.join(iter_dir, 'genes.fasta')
         if not os.path.exists(curr_iter_fasta):
+            print('gene file does not exist')
             break
         curr_iter_seqs = [r for r in SeqIO.parse(curr_iter_fasta, 'fasta')]
-        if len(prev_iter_seqs) == len(curr_iter_seqs):
+        print('# current genes: ' + str(len(curr_iter_seqs)) + ', # previous genes: ' + str(len(prev_iter_seqs)))
+        if len(prev_iter_seqs) >= len(curr_iter_seqs):
+            print('no new genes were detected, stopping the iterative search')
+            shutil.rmtree(iter_dir)
             break
         prev_iter_seqs = curr_iter_seqs
         prev_fasta = curr_iter_fasta
@@ -186,6 +193,9 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             ref_gene_fasta = ig_genes[gene]
             igdetective_tsv = os.path.join(os.path.join(output_dir, 'predicted_genes_' + locus), 'genes_' + gene_type + '.tsv')
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_dir, gene)
+
+    #### the end
+    print('Thank you for using IgDetective!')
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:

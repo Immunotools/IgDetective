@@ -103,7 +103,7 @@ def main(genome_fasta, gene_fasta, output_dir):
     position_dict = ProcessSamFile(sam_file)
     if len(position_dict) == 0:
         print('no matches were found')
-        sys.exit(0)
+        return
 
     contig_dict = dict()
     for r in SeqIO.parse(genome_fasta, 'fasta'):

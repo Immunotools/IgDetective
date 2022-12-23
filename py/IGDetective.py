@@ -34,10 +34,10 @@ ALIGNER.mode = 'local'
 
 def InitializeVariables(locus):
     if locus == 'IGK':
-        SPACER_LENGTH = {V:12, DL:12, DR:12, J:23}
+        SPACER_LENGTH = {V:12, DL:23, DR:12, J:23}
         GENE_TYPES_TOFIND = [V,J]
     if locus == 'IGL':
-        SPACER_LENGTH = {V:23, DL:12, DR:12, J:12}    
+        SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}    
         GENE_TYPES_TOFIND = [V,J]
 
 #READ DATAFILES
