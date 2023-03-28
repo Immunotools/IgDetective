@@ -112,9 +112,9 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
             nucl_seqs.add(str(r.seq))
     df = pd.read_csv(igdetective_tsv, sep = '\t')
     for i in range(len(df)):
-        aa_seq = str(Seq(df['gene sequence'][i]).translate())
-        if aa_seq.find('*') == -1:
-            nucl_seqs.add(df['gene sequence'][i])
+#        aa_seq = str(Seq(df['gene sequence'][i]).translate())
+#        if aa_seq.find('*') == -1:
+        nucl_seqs.add(df['gene sequence'][i])
     fh = open(output_fasta, 'w')
     for seq_idx, seq in enumerate(nucl_seqs):
         fh.write('>seq_' + str(seq_idx) + '\n' + seq + '\n')
@@ -146,7 +146,7 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
         print('# current genes: ' + str(len(curr_iter_seqs)) + ', # previous genes: ' + str(len(prev_iter_seqs)))
         if len(prev_iter_seqs) >= len(curr_iter_seqs):
             print('no new genes were detected, stopping the iterative search')
-            shutil.rmtree(iter_dir)
+#            shutil.rmtree(iter_dir)
             break
         prev_iter_seqs = curr_iter_seqs
         prev_fasta = curr_iter_fasta
