@@ -127,7 +127,7 @@ def main(genome_fasta, gene_fasta, output_dir):
     aligner.extend_gap_score = -1
 
     gene_len = 400 #max([len(gene) for gene in genes])
-    df = {'Contig' : [], 'Pos' : [], 'Seq' : [], 'AASeq' : [], 'PI' : [], 'BestHit' : []}
+    df = {'Contig' : [], 'Pos' : [], 'Seq' : [], 'AASeq' : [], 'PI' : [], 'BestHit' : [], 'Productive' : []}
     for c_id in position_dict:
         contig_seq = contig_dict[c_id]
         prev_pos = -1
@@ -143,9 +143,9 @@ def main(genome_fasta, gene_fasta, output_dir):
 #                print('empty alignment')
                 continue
             aa_seq = str(Seq(alignment.gene_seq).translate())
-            if aa_seq.find('*') != -1:
+#            if aa_seq.find('*') != -1:
 #                print('non-productive gene')
-                continue
+#                continue
 #            print('==== ' + c_id + ', pos: ' + str(pos) + ', gene: ' + alignment.gene_id + ', PI: ' + str(alignment.pi))
 #            print(alignment.gene_seq)
 #            print(aa_seq)
@@ -155,6 +155,7 @@ def main(genome_fasta, gene_fasta, output_dir):
             df['AASeq'].append(aa_seq)
             df['PI'].append(alignment.pi)
             df['BestHit'].append(alignment.gene_id)
+            df['Productive'].append(aa_seq.find('*') == -1)
             prev_pos = pos
 
     df = pd.DataFrame(df)
