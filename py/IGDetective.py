@@ -12,7 +12,8 @@ import numpy as np
 
 from multiprocessing import Pool
 
-#INITIALIZE VARIABLES
+
+#INITIALIZE VARIABLES, default = IGH
 V = 'V'
 D = 'D'
 J = 'J'
@@ -31,8 +32,13 @@ MAXK_CUTOFF = {V: 15 , J: 11}
 ALIGNER = Align.PairwiseAligner()
 ALIGNER.mode = 'local'
 
-
-
+def InitializeVariables(locus):
+    if locus == 'IGK':
+        SPACER_LENGTH = {V:12, DL:23, DR:12, J:23}
+        GENE_TYPES_TOFIND = [V,J]
+    if locus == 'IGL':
+        SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}    
+        GENE_TYPES_TOFIND = [V,J]
 
 #READ DATAFILES
 try:
@@ -43,10 +49,11 @@ except:
 
 #PARSE COMMAND LINE ARGUMENTS
 argumentList = sys.argv[1:]
-options = "hi:o:m:rg:"
-long_options = ["help","input_file=", "output_directory=", "multi_process=", "rss_only" , "genes_type="]
+options = "hi:o:m:rg:l:"
+long_options = ["help","input_file=", "output_directory=", "multi_process=", "rss_only" , "genes_type=", "locus="]
 force_output = True
 received_input = False
+LOCUS = 'IGH'
 RSS_MODE = False
 help_flag = False
 NUM_THREADS = 1
@@ -59,6 +66,7 @@ try:
             print("-h , --help : Get this message")
             print("-i, --input_file : provide a fasta file for gene detection")
             print("-o, --output_directory : (optional) provide an output directory for generated results. Default location is in the parent directory of the input file")
+            print("-l, --locus : immunoglobulin locus IGH, IGK, or IGL. Default is IGH")
             print("-m, --multi_process : (optional) provide number of parallel processing units if available. Default is 1")
             print("-r, --rss_only : (optional) switch to RSS finding mode")
             print("-g, --genes_type : (optional) specify which genes (v,d,j) to find. Eg: vdj, d, vj, jv. Default is vdj")
@@ -72,17 +80,24 @@ try:
             OUTPUT_PATH = str(currentValue)
             force_output = False
 
+        elif currentArgument in ("-l", "--locus"):
+            if currentValue not in ['IGH', 'IGK', 'IGL']:
+                print('Incorrect locus argument: ' + currentValue)
+                sys.exit(1)
+            LOCUS = currentValue
+            InitializeVariables(LOCUS)
+
         elif currentArgument in ("-m", "--multi_process"):
             NUM_THREADS = int(currentValue)
 
         elif currentArgument in ("-r", "--rss_only"):
             RSS_MODE = True
 
-        elif currentArgument in ("-g", "--genes_type"):
-            GENE_TYPES_TOFIND = set(list(str(currentValue).upper()))
-            for g in GENE_TYPES_TOFIND:
-                if g not in GENE_TYPES:
-                    raise NameError('gene types must be from v,d or j')
+#        elif currentArgument in ("-g", "--genes_type"):
+#            GENE_TYPES_TOFIND = set(list(str(currentValue).upper()))
+#            for g in GENE_TYPES_TOFIND:
+#                if g not in GENE_TYPES:
+#                    raise NameError('gene types must be from v,d or j')
 
 
     if not received_input and not help_flag:
@@ -112,8 +127,8 @@ input_seq_dict= {rec.id : rec.seq for rec in SeqIO.parse(INPUT_PATH, "fasta")}
 
 canonical_genes = {V : {} , J : {}}
 for gene in (V,J):
-    file_path = 'datafiles/human_{}.fasta'.format(gene)
-    canonical_genes[gene] = {rec.id : rec.seq for rec in SeqIO.parse(file_path, "fasta")}
+    file_path = 'datafiles/human_reference_genes/' + LOCUS + gene + '.fa' #'datafiles/human_{}.fasta'.format(gene)
+    canonical_genes[gene] = {rec.id : rec.seq.upper() for rec in SeqIO.parse(file_path, "fasta")}
 
 #DEFINE RSS FINDING METHODS
 #Find indexes of valid motifs
@@ -447,6 +462,8 @@ def print_predicted_genes(filepath, gene, predictions):
         writer.writerows(detected_gene_info)
 
 
+print("Finding immunoglobulin genes for locus " + LOCUS + '...')
+
 #FIND RSS IN INPUT FASTA
 print("Finding candidate RSS...",end =" ")
 input_rss_info = {st : {strand : get_contigwise_rss(st,strand, input_seq_dict) for strand in (FWD , REV)} for st in SIGNAL_TYPES}
@@ -488,6 +505,7 @@ print("Done")
 
 #Print genes to tsv file
 for gene in GENE_TYPES_TOFIND:
+#    print(gene, input_rss_info[gene], s_fragments[gene], s_fragment_alignment[gene])
     if gene == D:
         print_predicted_genes('{}/genes_{}.tsv'.format(OUTPUT_PATH, D) , D, extract_genes(input_seq_dict, D, input_rss_info[D], None, None))
     else:
