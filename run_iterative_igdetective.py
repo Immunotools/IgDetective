@@ -74,8 +74,12 @@ def GetPositionRange(sorted_positions):
 def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     print('==== Running RSS-based IgDetective for ' + locus + '...')
     txt = os.path.join(igcontig_dir, '__summary.txt')
+    if not os.path.exists(txt):
+        return
     df = pd.read_csv(txt, sep = '\t')
     igh_df = df.loc[df['Locus'] == locus]
+    if len(igh_df) == 0:
+        return
     fasta = os.path.join(output_dir, 'combined_contigs_' + locus + '.fasta')
     fh = open(fasta, 'w')
     contigs = set(igh_df['ContigID'])
