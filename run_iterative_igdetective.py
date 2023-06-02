@@ -173,7 +173,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
 
     #### running IG gene alignments
     print('==== Aligning human IG genes...')
-    alignment_dir = os.path.join(output_dir, 'alignments')
+    alignment_dir = os.path.join(output_dir, 'initial_alignments')
     os.mkdir(alignment_dir)
     AlignReferenceGenes(alignment_dir, genome_fasta, output_dir)
     
@@ -184,12 +184,16 @@ def main(genome_fasta, output_dir, ig_gene_dir):
 
     #### running IgDetective
     loci = ['IGH', 'IGK', 'IGL']
+    igdetect_dir = os.path.join(output_dir, 'denovo_search')
+    os.mkdir(igdetect_dir)
     for locus in loci:
-        RunIgDetective(igcontig_dir, output_dir, locus)
+        RunIgDetective(igcontig_dir, igdetect_dir, locus)
 
     #### aligning IG genes
     ig_genes = ReadGeneDir(ig_gene_dir)
-    gene_types = ['V', 'J']
+    iter_dir = os.path.join(output_dir, 'iterative_search')
+    os.mkdir(iter_dir)
+    gene_types = ['V']
     for locus in loci:
         for gene_type in gene_types:
             gene = locus + gene_type
@@ -197,8 +201,8 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             if gene not in ig_genes:
                 continue
             ref_gene_fasta = ig_genes[gene]
-            igdetective_tsv = os.path.join(os.path.join(output_dir, 'predicted_genes_' + locus), 'genes_' + gene_type + '.tsv')
-            AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_dir, gene)
+            igdetective_tsv = os.path.join(os.path.join(igdetect_dir, 'predicted_genes_' + locus), 'genes_' + gene_type + '.tsv')
+            AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
 
     #### the end
     print('Thank you for using IgDetective!')
