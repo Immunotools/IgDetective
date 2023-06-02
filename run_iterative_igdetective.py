@@ -137,6 +137,7 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
         return
     print('# combined genes: ' + str(len(prev_iter_seqs)))
     prev_fasta = combined_fasta
+    num_gene_dict = dict()
     for i in range(num_iter):
         print('== Iteration ' + str(i + 1) + '...')
         iter_dir = os.path.join(output_dir, gene_type + '_iter' + str(i + 1))
@@ -146,13 +147,15 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
             print('gene file does not exist')
             break
         curr_iter_seqs = [r for r in SeqIO.parse(curr_iter_fasta, 'fasta')]
+        num_gene_dict[iter_dir] = len(curr_iter_seqs)
         print('# current genes: ' + str(len(curr_iter_seqs)) + ', # previous genes: ' + str(len(prev_iter_seqs)))
         if len(prev_iter_seqs) >= len(curr_iter_seqs) and i != 0:
             print('no new genes were detected, stopping the iterative search')
-#            shutil.rmtree(iter_dir)
             break
         prev_iter_seqs = curr_iter_seqs
         prev_fasta = curr_iter_fasta
+    best_iter = sorted(num_gene_dict, key = lambda x : num_gene_dict[x], reverse = True)[0]
+    os.system('cp -r ' + best_iter + ' ' + os.path.join(output_dir, gene_type + '_final'))
 
 def ReadGeneDir(ig_gene_dir):
     files = os.listdir(ig_gene_dir)
