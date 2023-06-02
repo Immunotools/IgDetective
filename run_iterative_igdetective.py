@@ -144,7 +144,7 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
             break
         curr_iter_seqs = [r for r in SeqIO.parse(curr_iter_fasta, 'fasta')]
         print('# current genes: ' + str(len(curr_iter_seqs)) + ', # previous genes: ' + str(len(prev_iter_seqs)))
-        if len(prev_iter_seqs) >= len(curr_iter_seqs):
+        if len(prev_iter_seqs) >= len(curr_iter_seqs) and i != 0:
             print('no new genes were detected, stopping the iterative search')
 #            shutil.rmtree(iter_dir)
             break
@@ -198,10 +198,10 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     print('Thank you for using IgDetective!')
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print('python run_iterative_igdetective.py genome.fasta output_dir ig_gene_dir')
+    if len(sys.argv) != 3:
+        print('python run_iterative_igdetective.py genome.fasta output_dir')
         sys.exit(1)
     genome_fasta = sys.argv[1]
     output_dir = sys.argv[2]
-    ig_gene_dir = sys.argv[3]
+    ig_gene_dir = 'datafiles/combined_reference_genes' #sys.argv[3]
     main(genome_fasta, output_dir, ig_gene_dir)
