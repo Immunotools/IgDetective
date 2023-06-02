@@ -34,7 +34,6 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 10000000):
     prefix_len = max_pos
     suffix_len = seq_len - min_pos
     gap = 1000000
-    print(min_pos, max_pos, seq_len, prefix_len, suffix_len)
     if prefix_len > max_len and suffix_len > max_len:
         return (max(min_pos - gap, 0), min(prefix_len + gap, seq_len))
     if prefix_len < suffix_len:
@@ -99,7 +98,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
         positions = sorted(c_df['Position'])
         min_pos, max_pos = GetPositionRange(positions)
         contig_range = GetRange(min_pos, max_pos, len(seq))
-        print(contig_range, contig_range[1] - contig_range[0])
+        print('Contig: ' + c + ', contig range: ' + str(contig_range) + ', approx locus length: ' + str(contig_range[1] - contig_range[0]))
         fh.write('>' + seq_id + '|START:' + str(contig_range[0]) + '|END:' + str(contig_range[1]) + '\n')
         fh.write(seq[contig_range[0] : contig_range[1]] + '\n')
     fh.close()

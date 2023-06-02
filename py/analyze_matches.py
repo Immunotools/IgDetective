@@ -67,12 +67,6 @@ def AnalyzeMatches(sam_file):
         contig_match_dict[ref_id][start_pos].append(Match(read_id, cigar))
     return contig_match_dict
 
-def OutputToPdf(output_fname):
-    pp = PdfPages(output_fname)
-    pp.savefig()
-    pp.close()
-    plt.clf()
-
 def CompressMatches(match_dict, gene_type):
     # match dict: start pos -> [Match]
     window_dict = {'V' : 200, 'J' : 30, 'C' : 500}
@@ -205,7 +199,6 @@ for contig in contig_matches:
                 num_matches.append(len(combined_matches[contig][(l, g)]))
             else:
                 num_matches.append(0)
-#    print input_dir + '\t' + contig + '\t' + '\t'.join([str(n) for n in num_matches])
     matrix.append(num_matches)
     annot_row = [''] * len(num_matches)
     for i in range(len(num_matches)):
@@ -224,12 +217,12 @@ if len(matrix) != 0:
     plt.title(input_dir) 
     sns.heatmap(matrix, annot = np.array(annot_matrix), cmap = 'coolwarm', robust = True, fmt = '', xticklabels = xlabels, yticklabels = ylabels, cbar = False)
     plt.yticks(fontsize = 6)
-    OutputToPdf(os.path.join(output_dir, '__summary.pdf'))
+    plt.savefig(os.path.join(output_dir, '__summary.png'), dpi = 300)
+    plt.clf()
 
 summary_txt = os.path.join(output_dir, '__summary.txt')
 summary_fh = open(summary_txt, 'w')
 summary_fh.write('ContigID\tContigLength\tLocus\tGeneType\tPosition\tGeneName\n')
-gene_color = {'V' : '#6F49A0', 'J' : '#54D383', 'C' : '#FF773D'}        
 for contig in contig_matches:
     contig_str = contig.replace('|', '_')
 #    print(contig)
@@ -240,39 +233,15 @@ for contig in contig_matches:
         matches_pos = [p[0] for p in locus_gene_matches[(locus, gene)]]
         max_pos = max(max_pos, max(matches_pos))
         min_pos = min(min_pos, min(matches_pos))
-#    if min_pos == max_pos:
-#        continue
-    plt.figure()
-    fig, axes = plt.subplots(nrows = len(locus_gene_matches))
-    if len(locus_gene_matches) == 1:
-        axes = [axes]
-    width = ((max_pos - min_pos) / 500) + 1
-    num_genes = 0
     gene_bounds = dict() # geneType -> bounds
-    for (locus, gene), ax in zip(locus_gene_matches, axes):
+    for locus, gene in locus_gene_matches:
         locus_gene_bounds = (sys.maxsize, 0)
         # txt writing
         for pos, gene_name in sorted(locus_gene_matches[(locus, gene)], key = lambda x : x[0]):
-#            print(pos, gene_name)
             summary_fh.write(contig_str + '\t' + str('-') + '\t' + locus + '\t' + gene + '\t' + str(pos) + '\t' + str(gene_name) + '\n')
             locus_gene_bounds = (min(locus_gene_bounds[0], pos), max(locus_gene_bounds[1], pos))
         # gene bounds
         gene_bounds[(locus, gene)] = locus_gene_bounds
-        # outputting gene, locus matches to plot
-        plt.sca(ax)
-        plt.bar(matches_pos, [1] * len(matches_pos), color = gene_color[gene.split('-')[0]], label = locus + gene, width = width)
-        plt.legend()
-        plt.xlim(min_pos - width * 10, max_pos + width * 10)
-        plt.legend()
-        if num_genes == len(locus_gene_matches) - 1:
-            plt.xlabel("position (nt)")
-        else:
-            plt.xticks(matches_pos, [''] * len(matches_pos), fontsize = 8)
-        plt.yticks([], [])
-        num_genes += 1
-    # writing plot
-    plt.suptitle(input_dir + ', ' + contig_str + ' [' + str(min_pos) + ' : ' + str(max_pos) + ']')
-    OutputToPdf(os.path.join(output_dir, '_' + contig_str + '.pdf'))
     # extracting loci and subloci
     OutputLoci(contig_str, contig_seqs[contig], gene_bounds, output_dir)
 
