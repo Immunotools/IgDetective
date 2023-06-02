@@ -11,7 +11,7 @@ from Bio import Align
 import numpy as np
 
 from multiprocessing import Pool
-
+from multiprocessing import get_context
 
 #INITIALIZE VARIABLES, default = IGH
 V = 'V'
@@ -189,7 +189,8 @@ def get_contigwise_rss(sig_type,strand,parent_seq):
         parallel_heptamers.append((sequence, VALID_MOTIFS[sig_type]['7'], 7))
         parallel_nonamers.append((sequence, VALID_MOTIFS[sig_type]['9'], 9))
 
-    p = Pool(NUM_THREADS)    
+#    p = Pool(NUM_THREADS)    
+    p = get_context("fork").Pool(NUM_THREADS)
     heptamer_resultset = p.starmap(find_valid_motif_idx,parallel_heptamers)
     nonamer_resultset = p.starmap(find_valid_motif_idx,parallel_nonamers)
 
@@ -364,7 +365,8 @@ def align_fragment_to_genes(fragments, canon_genes, scoring_scheme, gene):
                 seq_A = 'A' * len(seq_B) #canon_genes[j]
             parallel_alignments.append((seq_A,seq_B,ALIGNMENT_EXTENSION[gene]))
             
-    p = Pool(NUM_THREADS)
+    #p = Pool(NUM_THREADS)
+    p = get_context("fork").Pool(NUM_THREADS)
     alignment_results = p.starmap(ComputeAlignment , parallel_alignments)
     for a in alignment_results:
         alignment = a[0]
