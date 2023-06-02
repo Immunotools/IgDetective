@@ -165,6 +165,11 @@ def ReadGeneDir(ig_gene_dir):
         gene_dict[gene_type] = os.path.join(ig_gene_dir, f)
     return gene_dict
 
+def CleanLargeContigs(ig_contig_dir):
+    files = [f for f in os.listdir(ig_contig_dir) if f[:4] in ['IGH_', 'IGK_', 'IGL_'] and f.find('fasta') != -1]
+    for f in files:
+        os.system('rm ' + os.path.join(ig_contig_dir, f))
+
 def main(genome_fasta, output_dir, ig_gene_dir):
     #### preparation
     CheckPythonVersionFatal()
@@ -203,6 +208,9 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             ref_gene_fasta = ig_genes[gene]
             igdetective_tsv = os.path.join(os.path.join(igdetect_dir, 'predicted_genes_' + locus), 'genes_' + gene_type + '.tsv')
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
+
+    #### cleanup
+    CleanLargeContigs(igcontig_dir)
 
     #### the end
     print('Thank you for using IgDetective!')
