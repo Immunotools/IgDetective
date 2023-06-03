@@ -170,6 +170,44 @@ def CleanLargeContigs(ig_contig_dir):
     for f in files:
         os.system('rm ' + os.path.join(ig_contig_dir, f))
 
+def UpdateVGeneDF(df, summary_df):
+    for i in range(len(df)):
+        summary_df['GeneType'].append('V')
+        summary_df['Contig'].append(df['Contig'][i])
+        summary_df['Pos'].append(df['Pos'][i])
+        summary_df['Sequence'].append(df['Seq'][i])
+    return summary_df
+
+def UpdateDJGeneDF(df, summary_df, gene_type):
+    for i in range(len(df)):
+        summary_df['GeneType'].append(gene_type)
+        splits = df['reference contig'][i].split('|')
+        start_pos = int(splits[2].split(':')[1])
+        summary_df['Contig'].append(splits[0].split(':')[1])
+        summary_df['Pos'].append(start_pos + df['start of gene'][i])
+        summary_df['Sequence'].append(df['gene sequence'][i])
+    return summary_df
+
+def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
+    gene_dict = dict()
+    gene_dict['V'] = os.path.join(os.path.join(iter_dir, locus + 'V_final'), 'genes.tsv')
+    if locus == 'IGH':
+        gene_dict['D'] = os.path.join(denovo_dir, 'genes_D.tsv')
+    gene_dict['J'] = os.path.join(denovo_dir, 'genes_J.tsv')
+    gene_order = ['V', 'D', 'J']
+    sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Sequence' : []}
+    for gene_type in gene_order:
+        if gene_type not in gene_dict:
+            continue
+        df = pd.read_csv(gene_dict[gene_type], sep = '\t')
+        if gene_type == 'V':
+            sum_df = UpdateVGeneDF(df, sum_df)
+        else:
+            sum_df = UpdateDJGeneDF(df, sum_df, gene_type)
+    sum_df = pd.DataFrame(sum_df)
+    sum_df = sum_df.sort_values(by=['Contig', 'Pos'])
+    sum_df.to_csv(output_fname, sep = '\t', index = False)
+
 def main(genome_fasta, output_dir, ig_gene_dir):
     #### preparation
     CheckPythonVersionFatal()
@@ -208,6 +246,11 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             ref_gene_fasta = ig_genes[gene]
             igdetective_tsv = os.path.join(os.path.join(igdetect_dir, 'predicted_genes_' + locus), 'genes_' + gene_type + '.tsv')
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
+
+    #### combine locus genes
+    print('==== Combining IG genes')
+    for locus in loci:
+        CollectLocusSummary(os.path.join(igdetect_dir, 'predicted_genes_' + locus), iter_dir, locus, os.path.join(output_dir, 'combined_genes_' + locus + '.txt'))
 
     #### cleanup
     CleanLargeContigs(igcontig_dir)
