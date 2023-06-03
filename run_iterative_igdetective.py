@@ -192,7 +192,7 @@ def UpdateDJGeneDF(df, summary_df, gene_type):
         start_pos = int(splits[2].split(':')[1])
         summary_df['Contig'].append(splits[0].split(':')[1])
         summary_df['Pos'].append(start_pos + df['start of gene'][i])
-        summary_df['Strand'].append(df['direction'][i])
+        summary_df['Strand'].append(df['strand'][i])
         summary_df['Sequence'].append(df['gene sequence'][i])
         summary_df['Productive'].append('NA')
     return summary_df
