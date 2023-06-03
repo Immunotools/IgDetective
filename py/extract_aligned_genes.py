@@ -44,11 +44,12 @@ class Alignment:
     def Empty(self):
         return self.gene_seq == '' or self.gene_seq[0] == ' '
 
-def ComputeAlignment(aligner, query_list, gene_seqs):
+def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
     best_alignment = ''
     best_num_matches = 0
     best_gene = ''
-    for query in query_list:
+    best_strand = ''
+    for query, strand in zip(query_list, strand_list):
         for gene in gene_seqs:
             alignments = aligner.align(query, gene.seq)
             if len(alignments) == 0:
@@ -59,6 +60,7 @@ def ComputeAlignment(aligner, query_list, gene_seqs):
                 best_num_matches = num_matches
                 best_alignment = alignment
                 best_gene = gene.id
+                best_strand = strand
     splits = str(best_alignment).split('\n')
     if len(splits) == 1:
         return Alignment()
@@ -67,7 +69,7 @@ def ComputeAlignment(aligner, query_list, gene_seqs):
     align_range = FindAlignmentRange(gene_alignment)
     alignment = Alignment()
     alignment.Initiate(''.join([aa for aa in query_alignment[align_range[0] : align_range[1]] if aa != '-']), best_gene, float(best_num_matches) / (align_range[1] - align_range[0]))
-    return alignment
+    return alignment, best_strand
 
 def PrepareOutputDir(output_dir):
     if os.path.exists(output_dir):
@@ -127,7 +129,7 @@ def main(genome_fasta, gene_fasta, output_dir):
     aligner.extend_gap_score = -1
 
     gene_len = 400 #max([len(gene) for gene in genes])
-    df = {'Contig' : [], 'Pos' : [], 'Seq' : [], 'AASeq' : [], 'PI' : [], 'BestHit' : [], 'Productive' : []}
+    df = {'Contig' : [], 'Pos' : [], 'Seq' : [], 'AASeq' : [], 'PI' : [], 'BestHit' : [], 'Productive' : [], 'Strand' : []}
     for c_id in position_dict:
         contig_seq = contig_dict[c_id]
         prev_pos = -1
@@ -138,7 +140,7 @@ def main(genome_fasta, gene_fasta, output_dir):
                 continue
             fragment = contig_seq[max(0, pos - gene_len) : min(len(contig_seq), pos + gene_len)]
             fragment_rc = str(Seq(fragment).reverse_complement())
-            alignment = ComputeAlignment(aligner, [fragment, fragment_rc], genes)
+            alignment, strand = ComputeAlignment(aligner, [fragment, fragment_rc], ['+', '-'], genes)
             if alignment.Empty():
 #                print('empty alignment')
                 continue
@@ -156,6 +158,7 @@ def main(genome_fasta, gene_fasta, output_dir):
             df['PI'].append(alignment.pi)
             df['BestHit'].append(alignment.gene_id)
             df['Productive'].append(aa_seq.find('*') == -1)
+            df['Strand'].append(strand)
             prev_pos = pos
 
     df = pd.DataFrame(df)

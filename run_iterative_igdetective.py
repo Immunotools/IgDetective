@@ -175,6 +175,7 @@ def UpdateVGeneDF(df, summary_df):
         summary_df['GeneType'].append('V')
         summary_df['Contig'].append(df['Contig'][i])
         summary_df['Pos'].append(df['Pos'][i])
+        summary_df['Strand'].append(df['Strand'][i])
         summary_df['Sequence'].append(df['Seq'][i])
     return summary_df
 
@@ -185,6 +186,7 @@ def UpdateDJGeneDF(df, summary_df, gene_type):
         start_pos = int(splits[2].split(':')[1])
         summary_df['Contig'].append(splits[0].split(':')[1])
         summary_df['Pos'].append(start_pos + df['start of gene'][i])
+        summary_df['Strand'].append(df['direction'][i])
         summary_df['Sequence'].append(df['gene sequence'][i])
     return summary_df
 
@@ -195,7 +197,7 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
         gene_dict['D'] = os.path.join(denovo_dir, 'genes_D.tsv')
     gene_dict['J'] = os.path.join(denovo_dir, 'genes_J.tsv')
     gene_order = ['V', 'D', 'J']
-    sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Sequence' : []}
+    sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Strand' : [], 'Sequence' : []}
     for gene_type in gene_order:
         if gene_type not in gene_dict:
             continue
