@@ -7,6 +7,11 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 import numpy as np
 
+import matplotlib as mplt
+mplt.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 sys.path.append('py')
 import extract_aligned_genes as extr_genes
 
@@ -177,6 +182,7 @@ def UpdateVGeneDF(df, summary_df):
         summary_df['Pos'].append(df['Pos'][i])
         summary_df['Strand'].append(df['Strand'][i])
         summary_df['Sequence'].append(df['Seq'][i])
+        summary_df['Productive'].append(df['Productive'][i])
     return summary_df
 
 def UpdateDJGeneDF(df, summary_df, gene_type):
@@ -188,6 +194,7 @@ def UpdateDJGeneDF(df, summary_df, gene_type):
         summary_df['Pos'].append(start_pos + df['start of gene'][i])
         summary_df['Strand'].append(df['direction'][i])
         summary_df['Sequence'].append(df['gene sequence'][i])
+        summary_df['Productive'].append('NA')
     return summary_df
 
 def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
@@ -197,7 +204,7 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
         gene_dict['D'] = os.path.join(denovo_dir, 'genes_D.tsv')
     gene_dict['J'] = os.path.join(denovo_dir, 'genes_J.tsv')
     gene_order = ['V', 'D', 'J']
-    sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Strand' : [], 'Sequence' : []}
+    sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Strand' : [], 'Sequence' : [], 'Productive' : []}
     for gene_type in gene_order:
         if gene_type not in gene_dict:
             continue
@@ -207,8 +214,37 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
         else:
             sum_df = UpdateDJGeneDF(df, sum_df, gene_type)
     sum_df = pd.DataFrame(sum_df)
+    sum_df['Locus'] = locus
     sum_df = sum_df.sort_values(by=['Contig', 'Pos'])
     sum_df.to_csv(output_fname, sep = '\t', index = False)
+
+def OutputHeatmap(filenames, output_fname):
+    dfs = [pd.read_csv(fname, sep = '\t') for fname in filenames]
+    genes = ['IGHV', 'IGHD', 'IGHJ', 'IGKV', 'IGKJ', 'IGLV', 'IGLJ']
+    contigs = []
+    for df in dfs:
+        contig_set = set(df['Contig'])
+        for contig in contig_set:
+            if contig not in contigs:
+                contigs.append(contig)
+    matrix = []
+    annot_matrix = []
+    for contig in contigs:
+        matrix.append([0] * len(genes))
+        annot_matrix.append([''] * len(genes))
+    df = pd.concat(dfs).reset_index()
+    df['LongGeneType'] = [df['Locus'][i] + df['GeneType'][i] for i in range(len(df))]
+    for x_idx, contig in enumerate(contigs):
+        for y_idx, gene in enumerate(genes):
+            sub_df = df.loc[(df['LongGeneType'] == gene) & (df['Contig'] == contig)]
+            if len(sub_df) != 0:
+                matrix[x_idx][y_idx] = len(sub_df)
+                annot_matrix[x_idx][y_idx] = str(len(sub_df))
+    plt.figure(figsize = (12, 8))
+    sns.heatmap(matrix, annot = np.array(annot_matrix), yticklabels = contigs, xticklabels = genes, cmap = 'coolwarm', robust = True, fmt = '', cbar = False)
+    plt.yticks(fontsize = 6)
+    plt.savefig(output_fname, dpi = 300)
+    plt.clf()
 
 def main(genome_fasta, output_dir, ig_gene_dir):
     #### preparation
@@ -238,9 +274,8 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     ig_genes = ReadGeneDir(ig_gene_dir)
     iter_dir = os.path.join(output_dir, 'iterative_search')
     os.mkdir(iter_dir)
-    gene_types = ['V']
     for locus in loci:
-        for gene_type in gene_types:
+        for gene_type in ['V']:
             gene = locus + gene_type
             print('==== Iterative processing ' + gene + ' genes...')
             if gene not in ig_genes:
@@ -250,9 +285,16 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
 
     #### combine locus genes
-    print('==== Combining IG genes')
+    print('==== Combining genes for the same IG locus...')
+    combined_txt_files = []
     for locus in loci:
-        CollectLocusSummary(os.path.join(igdetect_dir, 'predicted_genes_' + locus), iter_dir, locus, os.path.join(output_dir, 'combined_genes_' + locus + '.txt'))
+        txt = os.path.join(output_dir, 'combined_genes_' + locus + '.txt')
+        combined_txt_files.append(txt)
+        CollectLocusSummary(os.path.join(igdetect_dir, 'predicted_genes_' + locus), iter_dir, locus, txt)
+
+    #### visualization
+    print('==== Visualization IG gene counts and positions...')
+    OutputHeatmap(combined_txt_files, os.path.join(output_dir, 'summary.png'))
 
     #### cleanup
     CleanLargeContigs(igcontig_dir)

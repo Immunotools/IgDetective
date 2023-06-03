@@ -7,8 +7,6 @@ import numpy as np
 import matplotlib as mplt
 mplt.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 
 from Bio import SeqIO
