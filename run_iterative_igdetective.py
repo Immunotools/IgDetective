@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 sys.path.append('py')
-import extract_aligned_genes as extr_genes
+import extract_aligned_genes as gene_finding_tools
+import visualization_tools as visual_tools
 
 ref_gene_dir = 'datafiles/human_reference_genes'
 
@@ -131,7 +132,7 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
 def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_dir, gene_type, num_iter = 5):
     # aligning reference genes
     iter0_dir = os.path.join(output_dir, gene_type + '_iter0')
-    extr_genes.main(genome_fasta, ref_gene_fasta, iter0_dir)
+    gene_finding_tools.main(genome_fasta, ref_gene_fasta, iter0_dir)
     iter0_fasta = os.path.join(iter0_dir, 'genes.fasta')
     # combining genes
     combined_fasta = os.path.join(output_dir, gene_type + '_combined.fasta')
@@ -146,7 +147,7 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
     for i in range(num_iter):
         print('== Iteration ' + str(i + 1) + '...')
         iter_dir = os.path.join(output_dir, gene_type + '_iter' + str(i + 1))
-        extr_genes.main(genome_fasta, prev_fasta, iter_dir)
+        gene_finding_tools.main(genome_fasta, prev_fasta, iter_dir)
         curr_iter_fasta = os.path.join(iter_dir, 'genes.fasta')
         if not os.path.exists(curr_iter_fasta):
             print('gene file does not exist')
@@ -218,34 +219,6 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
     sum_df = sum_df.sort_values(by=['Contig', 'Pos'])
     sum_df.to_csv(output_fname, sep = '\t', index = False)
 
-def OutputHeatmap(filenames, output_fname):
-    dfs = [pd.read_csv(fname, sep = '\t') for fname in filenames]
-    genes = ['IGHV', 'IGHD', 'IGHJ', 'IGKV', 'IGKJ', 'IGLV', 'IGLJ']
-    contigs = []
-    for df in dfs:
-        contig_set = set(df['Contig'])
-        for contig in contig_set:
-            if contig not in contigs:
-                contigs.append(contig)
-    matrix = []
-    annot_matrix = []
-    for contig in contigs:
-        matrix.append([0] * len(genes))
-        annot_matrix.append([''] * len(genes))
-    df = pd.concat(dfs).reset_index()
-    df['LongGeneType'] = [df['Locus'][i] + df['GeneType'][i] for i in range(len(df))]
-    for x_idx, contig in enumerate(contigs):
-        for y_idx, gene in enumerate(genes):
-            sub_df = df.loc[(df['LongGeneType'] == gene) & (df['Contig'] == contig)]
-            if len(sub_df) != 0:
-                matrix[x_idx][y_idx] = len(sub_df)
-                annot_matrix[x_idx][y_idx] = str(len(sub_df))
-    plt.figure(figsize = (12, 8))
-    sns.heatmap(matrix, annot = np.array(annot_matrix), yticklabels = contigs, xticklabels = genes, cmap = 'coolwarm', robust = True, fmt = '', cbar = False)
-    plt.yticks(fontsize = 6)
-    plt.savefig(output_fname, dpi = 300)
-    plt.clf()
-
 def main(genome_fasta, output_dir, ig_gene_dir):
     #### preparation
     CheckPythonVersionFatal()
@@ -294,7 +267,11 @@ def main(genome_fasta, output_dir, ig_gene_dir):
 
     #### visualization
     print('==== Visualization IG gene counts and positions...')
-    OutputHeatmap(combined_txt_files, os.path.join(output_dir, 'summary.png'))
+    visual_tools.OutputHeatmap(combined_txt_files, os.path.join(output_dir, 'summary.png'))
+    plot_dir = os.path.join(output_dir, 'position_plots')
+    os.mkdir(plot_dir)
+    for locus, fname in zip(loci, combined_txt_files):
+        visual_tools.OutputPositionsPerContig(fname, locus, plot_dir)
 
     #### cleanup
     CleanLargeContigs(igcontig_dir)
