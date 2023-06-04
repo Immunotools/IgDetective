@@ -119,11 +119,10 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
     if os.path.exists(genes_fasta):
         for r in SeqIO.parse(genes_fasta, 'fasta'):
             nucl_seqs.add(str(r.seq))
-    df = pd.read_csv(igdetective_tsv, sep = '\t')
-    for i in range(len(df)):
-#        aa_seq = str(Seq(df['gene sequence'][i]).translate())
-#        if aa_seq.find('*') == -1:
-        nucl_seqs.add(df['gene sequence'][i])
+    if os.path.exists(igdetective_tsv):
+        df = pd.read_csv(igdetective_tsv, sep = '\t')
+        for i in range(len(df)):
+            nucl_seqs.add(df['gene sequence'][i])
     fh = open(output_fasta, 'w')
     for seq_idx, seq in enumerate(nucl_seqs):
         fh.write('>seq_' + str(seq_idx) + '\n' + seq + '\n')
@@ -208,6 +207,8 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
     sum_df = {'GeneType' : [], 'Contig' : [], 'Pos' : [], 'Strand' : [], 'Sequence' : [], 'Productive' : []}
     for gene_type in gene_order:
         if gene_type not in gene_dict:
+            continue
+        if not os.path.exists(gene_dict[gene_type]):
             continue
         df = pd.read_csv(gene_dict[gene_type], sep = '\t')
         if gene_type == 'V':
