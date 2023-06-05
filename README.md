@@ -37,7 +37,7 @@ Each file represents a table describing detected genes using the following colum
 Examples of the txt files can be found in [examples/mDicBic1_igdetective](examples/mDicBic1_igdetective).
 
 ### Summary plot
-The summary plot `output_dir/summary.png` illustrates counts of the detected genes across all IG loci and contigs. The example of the summary plot for the black rhinoceros genome ([mDicBic1](https://genomeark.github.io/genomeark-all/Diceros_bicornis.html), the maternal assembly) is shown below:
+The summary plot `output_dir/summary.png` illustrates counts of the detected genes across all IG loci and contigs. An example of the summary plot for the black rhinoceros genome ([mDicBic1](https://genomeark.github.io/genomeark-all/Diceros_bicornis.html), the maternal assembly) is shown below:
 ![summary](examples/mDicBic1_igdetective/summary.png)
 
 ### Position plots
@@ -50,7 +50,7 @@ Each bar represents an IG gene, colors distinguish genes of different types:
 * orange: D,
 * green: J.
 
-Positions of IG genes are shown within a range from the leftmost IG gene to the rightmost IG gene.
+In this example, the IGH locus is located on the reverse-complementary strand and has the J-D-V ordering of IG genes. Positions of IG genes are shown within a range from the leftmost IG gene to the rightmost IG gene.
 
 ## Development
 We are actively working to make IGDetective better. Please report any bugs to GitHub. 
