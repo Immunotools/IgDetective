@@ -171,7 +171,7 @@ def ReadGeneDir(ig_gene_dir):
     return gene_dict
 
 def CleanLargeContigs(ig_contig_dir):
-    files = [f for f in os.listdir(ig_contig_dir) if f[:4] in ['IGH', 'IGK', 'IGL'] and f.find('fasta') != -1]
+    files = [f for f in os.listdir(ig_contig_dir) if f[:3] in ['IGH', 'IGK', 'IGL'] and f.find('fasta') != -1]
     for f in files:
         os.system('rm ' + os.path.join(ig_contig_dir, f))
 
