@@ -63,7 +63,7 @@ def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
                 best_strand = strand
     splits = str(best_alignment).split('\n')
     if len(splits) == 1:
-        return Alignment()
+        return Alignment(), best_strand
     query_alignment = splits[0].upper()
     gene_alignment = splits[2].upper()
     align_range = FindAlignmentRange(gene_alignment)

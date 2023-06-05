@@ -171,14 +171,14 @@ def ReadGeneDir(ig_gene_dir):
     return gene_dict
 
 def CleanLargeContigs(ig_contig_dir):
-    files = [f for f in os.listdir(ig_contig_dir) if f[:4] in ['IGH_', 'IGK_', 'IGL_'] and f.find('fasta') != -1]
+    files = [f for f in os.listdir(ig_contig_dir) if f[:4] in ['IGH', 'IGK', 'IGL'] and f.find('fasta') != -1]
     for f in files:
         os.system('rm ' + os.path.join(ig_contig_dir, f))
 
 def UpdateVGeneDF(df, summary_df):
     for i in range(len(df)):
         summary_df['GeneType'].append('V')
-        summary_df['Contig'].append(df['Contig'][i])
+        summary_df['Contig'].append(df['Contig'][i].replace('|', '_'))
         summary_df['Pos'].append(df['Pos'][i])
         summary_df['Strand'].append(df['Strand'][i])
         summary_df['Sequence'].append(df['Seq'][i])
@@ -190,7 +190,7 @@ def UpdateDJGeneDF(df, summary_df, gene_type):
         summary_df['GeneType'].append(gene_type)
         splits = df['reference contig'][i].split('|')
         start_pos = int(splits[2].split(':')[1])
-        summary_df['Contig'].append(splits[0].split(':')[1])
+        summary_df['Contig'].append(splits[0].split(':')[1].replace('|', '_'))
         summary_df['Pos'].append(start_pos + df['start of gene'][i])
         summary_df['Strand'].append(df['strand'][i])
         summary_df['Sequence'].append(df['gene sequence'][i])
