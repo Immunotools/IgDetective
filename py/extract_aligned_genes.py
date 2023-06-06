@@ -55,7 +55,7 @@ def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
             if len(alignments) == 0:
                 continue
             alignment = alignments[0]
-            splits = str(best_alignment).split('\n')
+            splits = str(alignment).split('\n')
             if len(splits) == 1:
                 return Alignment(), best_strand
             query_alignment = splits[0].upper()
