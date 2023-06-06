@@ -117,13 +117,9 @@ def main(genome_fasta, gene_fasta, output_dir):
             contig_dict[r.id] = str(r.seq)
 
     genes = []
-    processed_families = set()
     for r in SeqIO.parse(gene_fasta, 'fasta'):
-        family = r.id.split('*')[0].split('-')[0].split('S')[0]
-        if family not in processed_families:
-            r.seq = str(r.seq).upper()
-            genes.append(r)
-            processed_families.add(family)
+        r.seq = str(r.seq).upper()
+        genes.append(r)
 
     aligner = Align.PairwiseAligner()
     aligner.mode = 'local'
