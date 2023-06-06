@@ -5,6 +5,7 @@ import shutil
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio import Align
 import numpy as np
 
 import matplotlib as mplt
@@ -114,15 +115,34 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     print('Running: ' + command_line)
     os.system(command_line + ' > ' + os.path.join(output_dir, 'predicted_genes_' + locus + '.out'))
 
-def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
+def RefineIgDetectiveGenes(ref_gene_fasta, igdetective_tsv):
+    if not os.path.exists(igdetective_tsv):
+        return []
+    gene_seqs = []
+    for r in SeqIO.parse(ref_gene_fasta, 'fasta'):
+        r.seq = str(r.seq).upper()
+        gene_seqs.append(r)
+    refined_seqs = []
+    df = pd.read_csv(igdetective_tsv, sep = '\t')
+    aligner = Align.PairwiseAligner()
+    aligner.mode = 'local'
+    aligner.match_score = 2
+    aligner.mismatch_score = 0
+    aligner.open_gap_score = -2
+    aligner.extend_gap_score = -1
+    for i in range(len(df)):
+        seq = df['gene sequence'][i]
+        alignment, strand = gene_finding_tools.ComputeAlignment(aligner, [seq], ['+'], gene_seqs)
+        refined_seqs.append(alignment.gene_seq)
+    return refined_seqs
+
+def CombineIGGenes(genes_fasta, igdetective_seqs, output_fasta):
     nucl_seqs = set()
     if os.path.exists(genes_fasta):
         for r in SeqIO.parse(genes_fasta, 'fasta'):
             nucl_seqs.add(str(r.seq))
-    if os.path.exists(igdetective_tsv):
-        df = pd.read_csv(igdetective_tsv, sep = '\t')
-        for i in range(len(df)):
-            nucl_seqs.add(df['gene sequence'][i])
+    for seq in igdetective_seqs:
+        nucl_seqs.add(seq)
     fh = open(output_fasta, 'w')
     for seq_idx, seq in enumerate(nucl_seqs):
         fh.write('>seq_' + str(seq_idx) + '\n' + seq + '\n')
@@ -135,7 +155,8 @@ def AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, output_
     iter0_fasta = os.path.join(iter0_dir, 'genes.fasta')
     # combining genes
     combined_fasta = os.path.join(output_dir, gene_type + '_combined.fasta')
-    CombineIGGenes(iter0_fasta, igdetective_tsv, combined_fasta)
+    refined_denovo_seqs = RefineIgDetectiveGenes(ref_gene_fasta, igdetective_tsv)
+    CombineIGGenes(iter0_fasta, refined_denovo_seqs, combined_fasta)
     # iterative alignment
     prev_iter_seqs = [r for r in SeqIO.parse(combined_fasta, 'fasta')]
     if len(prev_iter_seqs) == 0:
