@@ -300,10 +300,11 @@ def get_s_fragment_from_RSS(gene, strand):
 def set_aligner(scheme):
     aligner_scoring = {'MAXK' :[1,-10000,-10000,-10000],
                    'AFFINE' :[1,0,-1,-0.5]}
-    ALIGNER.match_score = aligner_scoring[scheme][0]
-    ALIGNER.mismatch_score = aligner_scoring[scheme][1]
-    ALIGNER.open_gap_score = aligner_scoring[scheme][2]
-    ALIGNER.extend_gap_score = aligner_scoring[scheme][3]
+    ALIGNER.mode = 'local'
+    ALIGNER.match_score = 2 #aligner_scoring[scheme][0]
+    ALIGNER.mismatch_score = 0 #aligner_scoring[scheme][1]
+    ALIGNER.open_gap_score = -2 #aligner_scoring[scheme][2]
+    ALIGNER.extend_gap_score = -1 #aligner_scoring[scheme][3]
 
 
 #count length of alignment
