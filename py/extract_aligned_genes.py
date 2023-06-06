@@ -45,8 +45,8 @@ class Alignment:
         return self.gene_seq == '' or self.gene_seq[0] == ' '
 
 def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
-    best_alignment = ''
-    best_num_matches = 0
+    best_alignment = ('', '')
+    best_pi = 0
     best_gene = ''
     best_strand = ''
     for query, strand in zip(query_list, strand_list):
@@ -55,20 +55,24 @@ def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
             if len(alignments) == 0:
                 continue
             alignment = alignments[0]
+            splits = str(best_alignment).split('\n')
+            if len(splits) == 1:
+                return Alignment(), best_strand
+            query_alignment = splits[0].upper()
+            gene_alignment = splits[2].upper()
+            align_range = FindAlignmentRange(gene_alignment)            
             num_matches = GetNumMatches(alignment)
-            if num_matches >= best_num_matches:
-                best_num_matches = num_matches
-                best_alignment = alignment
+            pi = float(num_matches) / (align_range[1] - align_range[0])
+            if pi >= best_pi:
+                best_pi = pi
+                best_alignment = (query_alignment, gene_alignment)
                 best_gene = gene.id
                 best_strand = strand
-    splits = str(best_alignment).split('\n')
-    if len(splits) == 1:
-        return Alignment(), best_strand
-    query_alignment = splits[0].upper()
-    gene_alignment = splits[2].upper()
+    query_alignment = best_alignment[0]
+    gene_alignment = best_alignment[1]
     align_range = FindAlignmentRange(gene_alignment)
     alignment = Alignment()
-    alignment.Initiate(''.join([aa for aa in query_alignment[align_range[0] : align_range[1]] if aa != '-']), best_gene, float(best_num_matches) / (align_range[1] - align_range[0]))
+    alignment.Initiate(''.join([aa for aa in query_alignment[align_range[0] : align_range[1]] if aa != '-']), best_gene, best_pi)
     return alignment, best_strand
 
 def PrepareOutputDir(output_dir):
