@@ -124,8 +124,17 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
         df = pd.read_csv(igdetective_tsv, sep = '\t')
         for i in range(len(df)):
             nucl_seqs.add(df['gene sequence'][i])
+    reduced_seq_list = []
+    for seq1 in nucl_seqs:
+        is_substr = False
+        for seq2 in nucl_seqs:
+            if seq1 != seq2 and seq2.find(seq1) != -1:
+                is_substr = True
+                break
+        if not is_substr:
+            reduced_seq_list.append(seq1)
     fh = open(output_fasta, 'w')
-    for seq_idx, seq in enumerate(nucl_seqs):
+    for seq_idx, seq in enumerate(reduced_seq_list):
         fh.write('>seq_' + str(seq_idx) + '\n' + seq + '\n')
     fh.close()
 
