@@ -105,7 +105,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
         positions = sorted(c_df['Position'])
         min_pos, max_pos = GetPositionRange(positions)
         contig_range = GetRange(min_pos, max_pos, len(seq))
-        print('Contig: ' + c + ', contig range: ' + str(contig_range) + ', approx locus length: ' + str(contig_range[1] - contig_range[0]))
+        print('Contig: ' + str(c) + ', contig range: ' + str(contig_range) + ', approx locus length: ' + str(contig_range[1] - contig_range[0]))
         fh.write('>' + seq_id + '|START:' + str(contig_range[0]) + '|END:' + str(contig_range[1]) + '\n')
         fh.write(seq[contig_range[0] : contig_range[1]] + '\n')
     fh.close()
@@ -188,7 +188,7 @@ def CleanLargeContigs(ig_contig_dir):
 def UpdateVGeneDF(df, summary_df):
     for i in range(len(df)):
         summary_df['GeneType'].append('V')
-        summary_df['Contig'].append(df['Contig'][i].replace('|', '_'))
+        summary_df['Contig'].append(str(df['Contig'][i]).replace('|', '_'))
         summary_df['Pos'].append(df['Pos'][i])
         summary_df['Strand'].append(df['Strand'][i])
         summary_df['Sequence'].append(df['Seq'][i])
@@ -200,7 +200,7 @@ def UpdateDJGeneDF(df, summary_df, gene_type):
         summary_df['GeneType'].append(gene_type)
         splits = df['reference contig'][i].split('|')
         start_pos = int(splits[2].split(':')[1])
-        summary_df['Contig'].append(splits[0].split(':')[1].replace('|', '_'))
+        summary_df['Contig'].append(str(splits[0].split(':')[1]).replace('|', '_'))
         summary_df['Pos'].append(start_pos + df['start of gene'][i])
         summary_df['Strand'].append(df['strand'][i])
         summary_df['Sequence'].append(df['gene sequence'][i])

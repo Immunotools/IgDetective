@@ -63,5 +63,5 @@ def OutputPositionsPerContig(filename, locus, output_dir):
         plt.xlim(0, scale)
         plt.xticks([], [])
         plt.yticks([], [])
-        plt.savefig(os.path.join(output_dir, locus + '_' + contig + '.png'), dpi = 300)
+        plt.savefig(os.path.join(output_dir, locus + '_' + str(contig) + '.png'), dpi = 300)
         plt.clf()
