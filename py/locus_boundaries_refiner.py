@@ -31,6 +31,8 @@ def ComputeSummaryDF(dfs, contig_len_dict, shift):
     locus_df = {'LocusID' : [], 'Locus' : [], 'Contig' : [], 'StartPos' : [], 'EndPos' : [], 'Length' : [], 'GeneTypes' : [], 'NumV' : [], 'NumProdV' : [], 'FracProdV' : [], 'RelStart' : [], 'RelEnd' : []}
     locus_id = 1
     for df in dfs:
+        if len(df) == 0:
+            continue
         locus = df['Locus'][0]
         contigs = set(df['Contig'])
         for contig in contigs:
@@ -70,6 +72,8 @@ def ComputeSummaryDF(dfs, contig_len_dict, shift):
     return locus_df
 
 def VisualizeSummary(locus_df, output_fname):
+    if len(locus_df) == 0:
+        continue
     locus_colors = {'IGH' : '#9367BD', 'IGK' : 'orange', 'IGL' : '#2AA02B'}
     fig, axes = plt.subplots(nrows = 3, figsize = (15, 10))
     x = np.array(range(len(locus_df)))
@@ -112,7 +116,7 @@ def OutputLociToFastaFiles(summary_df, contig_seq_dict, output_dir):
         fragment = contig_seq[start_pos : end_pos]
         fname = os.path.join(output_dir, GetRangeBasename(summary_df, i) + '.fasta')
         fh = open(fname, 'w')
-        fh.write('>' + summary_df_df['Contig'][i] + '_' + str(summary_df['LocusID'][i]) + '_' + summary_df['Locus'][i] + '\n' + fragment + '\n')
+        fh.write('>' + summary_df['Contig'][i] + '_' + str(summary_df['LocusID'][i]) + '_' + summary_df['Locus'][i] + '\n' + fragment + '\n')
         fh.close()
 
 def VisualizeGenePositions(gene_df, locus_df, output_dir):
@@ -122,6 +126,8 @@ def VisualizeGenePositions(gene_df, locus_df, output_dir):
         start_pos = locus_df['StartPos'][i]
         end_pos = locus_df['EndPos'][i]
         sub_df = gene_df.loc[(gene_df['Contig'] == contig) & (gene_df['Pos'] >= start_pos) & (gene_df['Pos'] <= end_pos)]
+        if len(sub_df) == 0:
+            continue
         sub_df = sub_df.sort_values(by = 'Pos').reset_index()
         scale = 300
         scaled_pos = []
