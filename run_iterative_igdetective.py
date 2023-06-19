@@ -16,6 +16,7 @@ import seaborn as sns
 sys.path.append('py')
 import extract_aligned_genes as gene_finding_tools
 import visualization_tools as visual_tools
+import locus_boundaries_refiner as locus_refiner
 
 ref_gene_dir = 'datafiles/human_reference_genes'
 
@@ -181,7 +182,7 @@ def ReadGeneDir(ig_gene_dir):
     return gene_dict
 
 def CleanLargeContigs(ig_contig_dir):
-    files = [f for f in os.listdir(ig_contig_dir) if f[:3] in ['IGH', 'IGK', 'IGL'] and f.find('fasta') != -1]
+    files = [f for f in os.listdir(ig_contig_dir) if f.find('fasta') != -1]
     for f in files:
         os.system('rm ' + os.path.join(ig_contig_dir, f))
 
@@ -283,6 +284,12 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     os.mkdir(plot_dir)
     for locus, fname in zip(loci, combined_txt_files):
         visual_tools.OutputPositionsPerContig(fname, locus, plot_dir)
+
+    #### IG locus refinement: clearing spurious matches, extracting sequences of IG loci
+    print('==== Refinement of positions of IG loci')
+    locus_seq_dir = os.path.join(output_dir, 'refined_ig_loci')
+    os.mkdir(locus_seq_dir)
+    locus_refiner.main(genome_fasta, output_dir, locus_seq_dir)
 
     #### cleanup
     CleanLargeContigs(igcontig_dir)
