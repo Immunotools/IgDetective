@@ -39,6 +39,15 @@ def InitializeVariables(locus):
     if locus == 'IGL':
         SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}    
         GENE_TYPES_TOFIND = [V,J]
+    if locus == 'TRA':
+        SPACER_LENGTH = {V:23, J:12}
+        GENE_TYPES_TOFIND = [V,J]
+    if locus == 'TRB':
+        SPACER_LENGTH = {V:23, J:12, DL:12, DR:23}
+        GENE_TYPES_TOFIND = [V,D,J]
+    if locus == 'TRD':
+        SPACER_LENGTH = {V:23, J:12, DL:12, DR:23}
+        GENE_TYPES_TOFIND = [V,D,J]
 
 #READ DATAFILES
 try:

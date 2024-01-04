@@ -238,18 +238,18 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     PrepareOutputDir(output_dir)
 
     #### running IG gene alignments
-    print('==== Aligning human IG genes...')
+    print('==== Aligning reference adaptive immune genes...')
     alignment_dir = os.path.join(output_dir, 'initial_alignments')
     os.mkdir(alignment_dir)
     AlignReferenceGenes(alignment_dir, genome_fasta, output_dir)
     
     #### identifying IG contigs
-    print('==== Identifying IG contigs...')
+    print('==== Identifying contigs containing adaptive immune loci...')
     igcontig_dir = os.path.join(output_dir, 'ig_contigs')
     IdentifyIGContigs(igcontig_dir, alignment_dir, output_dir, genome_fasta)
 
     #### running IgDetective
-    loci = ['IGH', 'IGK', 'IGL']
+    loci = ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']
     igdetect_dir = os.path.join(output_dir, 'denovo_search')
     os.mkdir(igdetect_dir)
     for locus in loci:
@@ -270,7 +270,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
 
     #### combine locus genes
-    print('==== Combining genes for the same IG locus...')
+    print('==== Combining genes for the same adaptive immune locus...')
     combined_txt_files = []
     for locus in loci:
         txt = os.path.join(output_dir, 'combined_genes_' + locus + '.txt')
@@ -278,7 +278,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
         CollectLocusSummary(os.path.join(igdetect_dir, 'predicted_genes_' + locus), iter_dir, locus, txt)
 
     #### visualization
-    print('==== Visualization IG gene counts and positions...')
+    print('==== Visualization IG/TR gene counts and positions...')
     visual_tools.OutputHeatmap(combined_txt_files, os.path.join(output_dir, 'summary.png'))
     plot_dir = os.path.join(output_dir, 'position_plots')
     os.mkdir(plot_dir)
@@ -286,7 +286,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
         visual_tools.OutputPositionsPerContig(fname, locus, plot_dir)
 
     #### IG locus refinement: clearing spurious matches, extracting sequences of IG loci
-    print('==== Refinement of positions of IG loci')
+    print('==== Refinement of positions of IG/TR loci')
     locus_seq_dir = os.path.join(output_dir, 'refined_ig_loci')
     os.mkdir(locus_seq_dir)
     locus_refiner.main(genome_fasta, output_dir, locus_seq_dir)
