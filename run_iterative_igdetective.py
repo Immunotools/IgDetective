@@ -51,12 +51,12 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 10000000):
 def AlignIgGenes(genome_fasta, ig_gene_fasta, sam_file):
     os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null 2>&1')
 
-def AlignReferenceGenes(align_dir, genome_fasta, output_dir):
+def AlignReferenceGenes(align_dir, genome_fasta, ig_gene_dir, output_dir):
     ref_gene_dict = dict()
-    for f in os.listdir(ref_gene_dir):
+    for f in os.listdir(ig_gene_dir):
         gene_type = f.split('.')[0]
         if gene_type not in ref_gene_dict:
-            ref_gene_dict[gene_type] = os.path.join(ref_gene_dir, f)
+            ref_gene_dict[gene_type] = os.path.join(ig_gene_dir, f)
     for gene_type in ref_gene_dict:
         print('Aligning ' + gene_type + ' genes (' + ref_gene_dict[gene_type] + ')...')
         AlignIgGenes(genome_fasta, ref_gene_dict[gene_type], os.path.join(align_dir, gene_type + '.sam'))
@@ -241,7 +241,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     print('==== Aligning reference adaptive immune genes...')
     alignment_dir = os.path.join(output_dir, 'initial_alignments')
     os.mkdir(alignment_dir)
-    AlignReferenceGenes(alignment_dir, genome_fasta, output_dir)
+    AlignReferenceGenes(alignment_dir, genome_fasta, ig_gene_dir, output_dir)
     
     #### identifying IG contigs
     print('==== Identifying contigs containing adaptive immune loci...')
