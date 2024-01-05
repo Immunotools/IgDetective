@@ -78,6 +78,17 @@ def GetPositionRange(sorted_positions):
         end_pos = sorted_positions[-2]
     return start_pos, end_pos
 
+def GetFastaID(igcontig_dir, contig_id, locus):
+    fasta_files = os.listdir(igcontig_dir)
+    for f in fasta_files:
+        if f.find(contig_id) == -1:
+            continue
+        loci_str = f.split('_')[0]
+        if loci_str.find(locus) == -1:
+            continue
+        return os.path.join(igcontig_dir, f)
+    return ''
+
 def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     print('==== Running RSS-based IgDetective for ' + locus + '...')
     txt = os.path.join(igcontig_dir, '__summary.txt')
@@ -92,8 +103,8 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     contigs = set(igh_df['ContigID'])
     for c in contigs:
         c_df = igh_df.loc[igh_df['ContigID'] == c]
-        contig_fasta = os.path.join(igcontig_dir, locus + '_' + str(c) + '.fasta')
-        if not os.path.exists(contig_fasta):
+        contig_fasta = GetFastaID(igcontig_dir, c, locus) #os.path.join(igcontig_dir, locus + '_' + str(c) + '.fasta')
+        if not os.path.exists(contig_fasta) or contig_fasta == '':
             print('WARN: ' + contig_fasta + ' does not exist')
             continue
         seq = ''
