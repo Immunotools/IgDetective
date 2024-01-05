@@ -145,7 +145,7 @@ def VisualizeGenePositions(gene_df, locus_df, output_dir):
         plt.close()
 
 def main(genome_fasta, input_dir, output_dir):
-    files = ['combined_genes_IGH.txt', 'combined_genes_IGK.txt', 'combined_genes_IGL.txt']
+    files = ['combined_genes_IGH.txt', 'combined_genes_IGK.txt', 'combined_genes_IGL.txt', 'combined_genes_TRA.txt', 'combined_genes_TRB.txt', 'combined_genes_TRG.txt']
     dfs = [pd.read_csv(os.path.join(input_dir, fname), sep = '\t') for fname in files]
     df = pd.concat(dfs)
     #### reading contigs and contig lengths
