@@ -154,7 +154,7 @@ if os.path.exists(output_dir):
     shutil.rmtree(output_dir)
 os.mkdir(output_dir)
 
-loci = ['IGH', 'IGK', 'IGL']
+loci = ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']
 genes = ['V', 'J', 'C']
 
 input_files = os.listdir(input_dir)
