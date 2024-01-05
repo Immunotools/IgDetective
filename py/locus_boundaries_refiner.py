@@ -74,7 +74,7 @@ def ComputeSummaryDF(dfs, contig_len_dict, shift):
 def VisualizeSummary(locus_df, output_fname):
     if len(locus_df) == 0:
         return
-    locus_colors = {'IGH' : '#9367BD', 'IGK' : 'orange', 'IGL' : '#2AA02B'}
+    locus_colors = {'IGH' : '#9367BD', 'IGK' : 'orange', 'IGL' : '#2AA02B', 'TRA' : '#D62727', 'TRB' : '#1F77B4', 'TRG' : '#E377C1'}
     fig, axes = plt.subplots(nrows = 3, figsize = (15, 10))
     x = np.array(range(len(locus_df)))
     colors = [locus_colors[locus_df['Locus'][i]] for i in range(len(locus_df))]
