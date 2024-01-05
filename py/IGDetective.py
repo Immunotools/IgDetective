@@ -90,7 +90,7 @@ try:
             force_output = False
 
         elif currentArgument in ("-l", "--locus"):
-            if currentValue not in ['IGH', 'IGK', 'IGL']:
+            if currentValue not in ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']:
                 print('Incorrect locus argument: ' + currentValue)
                 sys.exit(1)
             LOCUS = currentValue
