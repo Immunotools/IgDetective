@@ -39,6 +39,15 @@ def InitializeVariables(locus):
     if locus == 'IGL':
         SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}    
         GENE_TYPES_TOFIND = [V,J]
+    if locus == 'TRA':
+        SPACER_LENGTH = {V:23, J:12}
+        GENE_TYPES_TOFIND = [V,J]
+    if locus == 'TRB':
+        SPACER_LENGTH = {V:23, J:12, DL:12, DR:23}
+        GENE_TYPES_TOFIND = [V,D,J]
+    if locus == 'TRD':
+        SPACER_LENGTH = {V:23, J:12, DL:12, DR:23}
+        GENE_TYPES_TOFIND = [V,D,J]
 
 #READ DATAFILES
 try:
@@ -81,7 +90,7 @@ try:
             force_output = False
 
         elif currentArgument in ("-l", "--locus"):
-            if currentValue not in ['IGH', 'IGK', 'IGL']:
+            if currentValue not in ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']:
                 print('Incorrect locus argument: ' + currentValue)
                 sys.exit(1)
             LOCUS = currentValue
@@ -127,7 +136,7 @@ input_seq_dict= {rec.id : rec.seq for rec in SeqIO.parse(INPUT_PATH, "fasta")}
 
 canonical_genes = {V : {} , J : {}}
 for gene in (V,J):
-    file_path = 'datafiles/human_reference_genes/' + LOCUS + gene + '.fa' #'datafiles/human_{}.fasta'.format(gene)
+    file_path = 'datafiles/combined_reference_genes/' + LOCUS + gene + '.fa' #'datafiles/human_{}.fasta'.format(gene)
     canonical_genes[gene] = {rec.id : rec.seq.upper() for rec in SeqIO.parse(file_path, "fasta")}
 
 #DEFINE RSS FINDING METHODS

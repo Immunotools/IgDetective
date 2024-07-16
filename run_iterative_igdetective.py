@@ -16,6 +16,7 @@ import seaborn as sns
 sys.path.append('py')
 import extract_aligned_genes as gene_finding_tools
 import visualization_tools as visual_tools
+import locus_boundaries_refiner as locus_refiner
 
 ref_gene_dir = 'datafiles/human_reference_genes'
 
@@ -50,12 +51,12 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 10000000):
 def AlignIgGenes(genome_fasta, ig_gene_fasta, sam_file):
     os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null 2>&1')
 
-def AlignReferenceGenes(align_dir, genome_fasta, output_dir):
+def AlignReferenceGenes(align_dir, genome_fasta, ig_gene_dir, output_dir):
     ref_gene_dict = dict()
-    for f in os.listdir(ref_gene_dir):
+    for f in os.listdir(ig_gene_dir):
         gene_type = f.split('.')[0]
         if gene_type not in ref_gene_dict:
-            ref_gene_dict[gene_type] = os.path.join(ref_gene_dir, f)
+            ref_gene_dict[gene_type] = os.path.join(ig_gene_dir, f)
     for gene_type in ref_gene_dict:
         print('Aligning ' + gene_type + ' genes (' + ref_gene_dict[gene_type] + ')...')
         AlignIgGenes(genome_fasta, ref_gene_dict[gene_type], os.path.join(align_dir, gene_type + '.sam'))
@@ -77,6 +78,17 @@ def GetPositionRange(sorted_positions):
         end_pos = sorted_positions[-2]
     return start_pos, end_pos
 
+def GetFastaID(igcontig_dir, contig_id, locus):
+    fasta_files = os.listdir(igcontig_dir)
+    for f in fasta_files:
+        if f.find(contig_id) == -1:
+            continue
+        loci_str = f.split('_')[0]
+        if loci_str.find(locus) == -1:
+            continue
+        return os.path.join(igcontig_dir, f)
+    return ''
+
 def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     print('==== Running RSS-based IgDetective for ' + locus + '...')
     txt = os.path.join(igcontig_dir, '__summary.txt')
@@ -91,8 +103,8 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     contigs = set(igh_df['ContigID'])
     for c in contigs:
         c_df = igh_df.loc[igh_df['ContigID'] == c]
-        contig_fasta = os.path.join(igcontig_dir, locus + '_' + str(c) + '.fasta')
-        if not os.path.exists(contig_fasta):
+        contig_fasta = GetFastaID(igcontig_dir, c, locus) #os.path.join(igcontig_dir, locus + '_' + str(c) + '.fasta')
+        if not os.path.exists(contig_fasta) or contig_fasta == '':
             print('WARN: ' + contig_fasta + ' does not exist')
             continue
         seq = ''
@@ -181,7 +193,7 @@ def ReadGeneDir(ig_gene_dir):
     return gene_dict
 
 def CleanLargeContigs(ig_contig_dir):
-    files = [f for f in os.listdir(ig_contig_dir) if f[:3] in ['IGH', 'IGK', 'IGL'] and f.find('fasta') != -1]
+    files = [f for f in os.listdir(ig_contig_dir) if f.find('fasta') != -1]
     for f in files:
         os.system('rm ' + os.path.join(ig_contig_dir, f))
 
@@ -237,18 +249,18 @@ def main(genome_fasta, output_dir, ig_gene_dir):
     PrepareOutputDir(output_dir)
 
     #### running IG gene alignments
-    print('==== Aligning human IG genes...')
+    print('==== Aligning reference adaptive immune genes...')
     alignment_dir = os.path.join(output_dir, 'initial_alignments')
     os.mkdir(alignment_dir)
-    AlignReferenceGenes(alignment_dir, genome_fasta, output_dir)
+    AlignReferenceGenes(alignment_dir, genome_fasta, ig_gene_dir, output_dir)
     
     #### identifying IG contigs
-    print('==== Identifying IG contigs...')
+    print('==== Identifying contigs containing adaptive immune loci...')
     igcontig_dir = os.path.join(output_dir, 'ig_contigs')
     IdentifyIGContigs(igcontig_dir, alignment_dir, output_dir, genome_fasta)
 
     #### running IgDetective
-    loci = ['IGH', 'IGK', 'IGL']
+    loci = ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']
     igdetect_dir = os.path.join(output_dir, 'denovo_search')
     os.mkdir(igdetect_dir)
     for locus in loci:
@@ -269,7 +281,7 @@ def main(genome_fasta, output_dir, ig_gene_dir):
             AlignGenesIteratively(ref_gene_fasta, igdetective_tsv, genome_fasta, iter_dir, gene)
 
     #### combine locus genes
-    print('==== Combining genes for the same IG locus...')
+    print('==== Combining genes for the same adaptive immune locus...')
     combined_txt_files = []
     for locus in loci:
         txt = os.path.join(output_dir, 'combined_genes_' + locus + '.txt')
@@ -277,12 +289,18 @@ def main(genome_fasta, output_dir, ig_gene_dir):
         CollectLocusSummary(os.path.join(igdetect_dir, 'predicted_genes_' + locus), iter_dir, locus, txt)
 
     #### visualization
-    print('==== Visualization IG gene counts and positions...')
+    print('==== Visualization IG/TR gene counts and positions...')
     visual_tools.OutputHeatmap(combined_txt_files, os.path.join(output_dir, 'summary.png'))
     plot_dir = os.path.join(output_dir, 'position_plots')
     os.mkdir(plot_dir)
     for locus, fname in zip(loci, combined_txt_files):
         visual_tools.OutputPositionsPerContig(fname, locus, plot_dir)
+
+    #### IG locus refinement: clearing spurious matches, extracting sequences of IG loci
+    print('==== Refinement of positions of IG/TR loci')
+    locus_seq_dir = os.path.join(output_dir, 'refined_ig_loci')
+    os.mkdir(locus_seq_dir)
+    locus_refiner.main(genome_fasta, output_dir, locus_seq_dir)
 
     #### cleanup
     CleanLargeContigs(igcontig_dir)
