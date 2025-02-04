@@ -6,29 +6,54 @@ from Bio import SeqIO
 from Bio import Align
 from Bio.Seq import Seq
 
-def FindAlignmentRange(gene_alignment):
-    first_pos = ''
-    for pos, c in enumerate(gene_alignment):
-        if c not in ['.', ' ']:
-            first_pos = pos
-            break
-    last_pos = ''
-    for i in range(len(gene_alignment)):
-        pos = len(gene_alignment) - i - 1
-        if gene_alignment[pos] not in ['.', ' ']:
-            last_pos = pos + 1
-            break
-    return [first_pos, last_pos]
+class BioAlign:
+    def __init__(self, alignment):
+        self.alignment = alignment
+        self.query_align = self.alignment[0].upper()
+        self.gene_align = self.alignment[1].upper()
+        self.gene_range = self._ComputeGeneRange()
+        ####
+        self.num_matches = -1
+        self.query_seq = ''
 
-def GetNumMatches(alignment):
-    splits = str(alignment).split('\n')
-    query_alignment = splits[0].upper()
-    gene_alignment = splits[2].upper()
-#    print(query_alignment + '\n' + gene_alignment + '\n===')
-    alignment_range = FindAlignmentRange(gene_alignment)
-    query_subalignment = query_alignment[alignment_range[0] : alignment_range[1]].upper()
-    matches = [i for i in range(min(len(gene_alignment), len(query_alignment))) if query_alignment[i] == gene_alignment[i]]
-    return len(matches)
+    def _ComputeGeneRange(self):
+        start_pos = 0
+        for i in range(len(self.gene_align)):
+            if self.gene_align[i] != '-':
+                start_pos = i
+                break
+        end_pos = len(self.gene_align)
+        for i in range(len(self.gene_align)):
+            pos = len(self.gene_align) - i - 1
+            if self.gene_align[pos] != '-':
+                end_pos = pos + 1
+                break
+        return start_pos, end_pos
+
+    def NumMatches(self):
+        if self.num_matches == -1:
+            for i in range(self.gene_range[0], self.gene_range[1]):
+                if self.query_align[i] == self.gene_align[i]:
+                    self.num_matches += 1
+        return self.num_matches
+
+    def PI(self):
+        return self.NumMatches() / len(self) * 100
+
+    def QuerySeq(self):
+        if self.query_seq == '':
+            nucls = []
+            for n in self.query_align[self.gene_range[0] : self.gene_range[1]]:
+                if n != '-':
+                    nucls.append(n)
+            self.query_seq = ''.join(nucls)
+        return self.query_seq
+
+    def __len__(self):
+        return self.gene_range[1] - self.gene_range[0]
+
+    def AlignmentRange(self):
+        return self.gene_range
 
 class Alignment:
     def __init__(self):
@@ -44,8 +69,21 @@ class Alignment:
     def Empty(self):
         return self.gene_seq == '' or self.gene_seq[0] == ' '
 
+def SetupAligner(aligner):
+    aligner.match_score = 5
+    aligner.mismatch_score = -9
+    aligner.mode = 'global'
+    aligner.target_internal_open_gap_score = -12
+    aligner.target_internal_extend_gap_score = -3
+    aligner.target_end_open_gap_score = -12
+    aligner.target_end_extend_gap_score = -3
+    aligner.query_internal_open_gap_score = -12
+    aligner.query_internal_extend_gap_score = -3
+    aligner.query_end_open_gap_score = 0
+    aligner.query_end_extend_gap_score = 0
+
 def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
-    best_alignment = ('', '')
+    best_alignment = ''
     best_pi = 0
     best_gene = ''
     best_strand = ''
@@ -54,27 +92,16 @@ def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
             alignments = aligner.align(query, gene.seq)
             if len(alignments) == 0:
                 continue
-            alignment = alignments[0]
-            splits = str(alignment).split('\n')
-            if len(splits) == 1:
-                continue
-            query_alignment = splits[0].upper()
-            gene_alignment = splits[2].upper()
-            align_range = FindAlignmentRange(gene_alignment)            
-            num_matches = GetNumMatches(alignment)
-            pi = float(num_matches) / (align_range[1] - align_range[0])
-            if pi >= best_pi:
-                best_pi = pi
-                best_alignment = (query_alignment, gene_alignment)
+            alignment = BioAlign(alignments[0])
+            if alignment.PI() >= best_pi:
+                best_pi = alignment.PI()
+                best_alignment = alignment
                 best_gene = gene.id
                 best_strand = strand
-    if len(best_alignment[0]) == 0:
+    if len(best_alignment) == 0:
         return Alignment(), ''
-    query_alignment = best_alignment[0]
-    gene_alignment = best_alignment[1]
-    align_range = FindAlignmentRange(gene_alignment)
     alignment = Alignment()
-    alignment.Initiate(''.join([aa for aa in query_alignment[align_range[0] : align_range[1]] if aa != '-']), best_gene, best_pi)
+    alignment.Initiate(best_alignment.QuerySeq(), best_gene, best_pi)
     return alignment, best_strand
 
 def PrepareOutputDir(output_dir):
@@ -124,11 +151,7 @@ def main(genome_fasta, gene_fasta, output_dir):
         genes.append(r)
 
     aligner = Align.PairwiseAligner()
-    aligner.mode = 'local'
-    aligner.match_score = 2
-    aligner.mismatch_score = 0
-    aligner.open_gap_score = -2
-    aligner.extend_gap_score = -1
+    SetupAligner(aligner)
 
     gene_len = 400 #max([len(gene) for gene in genes])
     df = {'Contig' : [], 'Pos' : [], 'Seq' : [], 'AASeq' : [], 'PI' : [], 'BestHit' : [], 'Productive' : [], 'Strand' : []}
@@ -136,15 +159,12 @@ def main(genome_fasta, gene_fasta, output_dir):
         contig_seq = contig_dict[c_id]
         prev_pos = -1
         for pos in sorted(position_dict[c_id]):
-#            print(pos)
             if pos - prev_pos <= gene_len:
-#                print('redundant position: ' + str(pos))
                 continue
             fragment = contig_seq[max(0, pos - gene_len) : min(len(contig_seq), pos + gene_len)]
             fragment_rc = str(Seq(fragment).reverse_complement())
             alignment, strand = ComputeAlignment(aligner, [fragment, fragment_rc], ['+', '-'], genes)
             if alignment.Empty():
-#                print('empty alignment')
                 continue
             aa_seq = str(Seq(alignment.gene_seq).translate())
 #            if aa_seq.find('*') != -1:

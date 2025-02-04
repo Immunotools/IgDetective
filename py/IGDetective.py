@@ -13,6 +13,8 @@ import numpy as np
 from multiprocessing import Pool
 from multiprocessing import get_context
 
+import extract_aligned_genes as align_utils
+
 #INITIALIZE VARIABLES, default = IGH
 V = 'V'
 D = 'D'
@@ -30,7 +32,6 @@ PI_CUTOFF = {'strict' : {V: 70, J: 70} , 'relax': {V: 60 ,J: 65}}
 MAXK_CUTOFF = {V: 15 , J: 11}
 
 ALIGNER = Align.PairwiseAligner()
-ALIGNER.mode = 'local'
 
 def InitializeVariables(locus):
     if locus == 'IGK':
@@ -101,13 +102,6 @@ try:
 
         elif currentArgument in ("-r", "--rss_only"):
             RSS_MODE = True
-
-#        elif currentArgument in ("-g", "--genes_type"):
-#            GENE_TYPES_TOFIND = set(list(str(currentValue).upper()))
-#            for g in GENE_TYPES_TOFIND:
-#                if g not in GENE_TYPES:
-#                    raise NameError('gene types must be from v,d or j')
-
 
     if not received_input and not help_flag:
         raise NameError('no input file was given')
@@ -307,46 +301,7 @@ def get_s_fragment_from_RSS(gene, strand):
 
 #define alignment score based on scheme
 def set_aligner(scheme):
-    aligner_scoring = {'MAXK' :[1,-10000,-10000,-10000],
-                   'AFFINE' :[1,0,-1,-0.5]}
-    ALIGNER.mode = 'local'
-    ALIGNER.match_score = 2 #aligner_scoring[scheme][0]
-    ALIGNER.mismatch_score = 0 #aligner_scoring[scheme][1]
-    ALIGNER.open_gap_score = -2 #aligner_scoring[scheme][2]
-    ALIGNER.extend_gap_score = -1 #aligner_scoring[scheme][3]
-
-
-#count length of alignment
-def count_alignment_len(al, gene_al, extend_alignment):
-    start,end = FindAlignmentRange(al, gene_al,  extend_alignment)
-    return 1+end-start
-
-#find start and end of alignment
-def FindAlignmentRange(al, gene_al, extend_alignment = None):
-    if '-' in al:
-        start,end = min(al.find('|'),al.find('-')) , max(al.rfind('|'),al[1].rfind('-'))
-    else:
-        start,end = al.find('|') , al.rfind('|')
-        
-    if extend_alignment == REV:
-        residual = len(gene_al[:start]) - gene_al[:start].count(' ')
-        start -= residual
-    elif extend_alignment == FWD:
-        residual = len(gene_al[end:]) - gene_al[end:].count(' ')
-        end += residual
-        
-    return start,end
-
-#get numnber of matches in an alignment
-def GetNumMatches(alignment, extend_alignment = None):
-    splits = str(alignment).split('\n')
-    seq_A_alignemnt = splits[0].upper()
-    seq_B_alignment = splits[2].upper()
-    coded_alignment = splits[1].upper()
-    start,end = FindAlignmentRange(coded_alignment, seq_B_alignment,  extend_alignment)
-    matches = (coded_alignment[start : end+1]).count('|')
-
-    return matches
+    align_utils.SetupAligner(ALIGNER)
 
 #align 2 strings
 def ComputeAlignment(seq_A, seq_B, extend_alignment = None):
@@ -354,9 +309,9 @@ def ComputeAlignment(seq_A, seq_B, extend_alignment = None):
     query_rc = query.reverse_complement()
     alignment = ALIGNER.align(query, seq_B)[0]
     alignment_rc = ALIGNER.align(query_rc, seq_B)[0]
-    fwd_matches  = GetNumMatches(alignment, extend_alignment)
-    rev_matches = GetNumMatches(alignment_rc, extend_alignment)
-    if  fwd_matches > rev_matches:
+    fwd_matches  = align_utils.BioAlign(alignment).NumMatches() 
+    rev_matches = align_utils.BioAlign(alignment_rc).NumMatches() 
+    if fwd_matches > rev_matches:
         return alignment, '+', fwd_matches
     else:
         return alignment_rc, '-', rev_matches
@@ -366,7 +321,17 @@ def align_fragment_to_genes(fragments, canon_genes, scoring_scheme, gene):
     parallel_alignments = []
     pis = []
     alignment_lens = []
-    
+
+# non-parallel version
+#    alignment_results = []
+#    for i in range(0, len(fragments)):
+#        for j in range(0, len(canon_genes)):
+#            seq_A = fragments[i]
+#            seq_B = canon_genes[j]
+#            if len(seq_A) == 0:
+#                seq_A = 'A' * len(seq_B)
+#            alignment_results.append(ComputeAlignment(seq_A, seq_B))    
+
     for i in range(0,len(fragments)):
         for j in range(0,len(canon_genes)):
             seq_A = fragments[i]
@@ -375,18 +340,15 @@ def align_fragment_to_genes(fragments, canon_genes, scoring_scheme, gene):
                 seq_A = 'A' * len(seq_B) #canon_genes[j]
             parallel_alignments.append((seq_A,seq_B,ALIGNMENT_EXTENSION[gene]))
             
-    #p = Pool(NUM_THREADS)
     p = get_context("fork").Pool(NUM_THREADS)
-    alignment_results = p.starmap(ComputeAlignment , parallel_alignments)
+    alignment_results = p.starmap(ComputeAlignment, parallel_alignments)
     for a in alignment_results:
         alignment = a[0]
         strand = a[1]
         num_matches = a[2]
-        splits = str(alignment).split('\n')
-        alig_len = count_alignment_len(splits[1],splits[2], ALIGNMENT_EXTENSION[gene])
-        perc_identity = num_matches* 100 / alig_len
-        pis.append(perc_identity)
-        alignment_lens.append(alig_len)
+        bio_align = align_utils.BioAlign(alignment)
+        pis.append(bio_align.PI())
+        alignment_lens.append(len(bio_align))
         
     pi_mat = np.zeros((len(fragments), len(canon_genes)))
     alig_len_mat = np.zeros((len(fragments), len(canon_genes)))
@@ -423,20 +385,20 @@ def extract_genes(parent_seq, gene, rss_idx, fragments, fragment_alignments):
                 c = list(canonical_genes[gene].keys()) 
                 for i,e in enumerate(fragment_alignments[strand][contig]):
                     if e[1] >= PI_CUTOFF['strict'][gene] or (e[1] >= PI_CUTOFF['relax'][gene] and e[2] >= MAXK_CUTOFF[gene]):
-                        a = ComputeAlignment(f[i],canonical_genes[gene][c[e[0]]], ALIGNMENT_EXTENSION)
-                        splits = str(a[0]).split('\n')
+                        a = ComputeAlignment(f[i], canonical_genes[gene][c[e[0]]], ALIGNMENT_EXTENSION)
+                        alignment = align_utils.BioAlign(a[0])
                         alig_direction = a[1]
-                        start,end = FindAlignmentRange(splits[1].upper(), splits[2].upper(), ALIGNMENT_EXTENSION[gene])
-                        
+                        start,end = alignment.AlignmentRange()
+                        predicted_gene = alignment.QuerySeq() 
+
                         if strand == FWD:
                             if gene == V:
                                 ge = r[i][0] -1
                                 gs = r[i][0]- GENE_LENGTH[gene] + start
-                                predicted_gene = parent_seq[contig][gs:ge+1].upper()
                             elif gene == J:
                                 gs = r[i][0] + 7
                                 ge = gs + end
-                                predicted_gene = parent_seq[contig][gs:ge].upper()
+                            #    predicted_gene = parent_seq[contig][gs:ge].upper()
                             h = parent_seq[contig][r[i][0]:r[i][0]+7].upper()
                             n = parent_seq[contig][r[i][1]:r[i][1]+9].upper()
 
@@ -444,18 +406,18 @@ def extract_genes(parent_seq, gene, rss_idx, fragments, fragment_alignments):
                             if gene == V:
                                 gs = r[i][0] + 7
                                 ge = gs + GENE_LENGTH[gene] - start -1
-                                predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
+                            #    predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
                             elif gene == J:
                                 ge = r[i][0] -1
                                 gs = r[i][0] - end
-                                predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
+                            #    predicted_gene = parent_seq[contig][gs:ge+1].reverse_complement().upper()
                             h = parent_seq[contig][r[i][0]:r[i][0]+7].reverse_complement().upper()
                             n = parent_seq[contig][r[i][1]:r[i][1]+9].reverse_complement().upper()
                         hi = r[i][0]
                         ni = r[i][1]
                         human_neighbour = c[e[0]]
                         
-                        final_genes.append([contig,strand,hi,ni,h,n,gs,ge,human_neighbour,alig_direction, int(round(e[1])), e[2] , predicted_gene])
+                        final_genes.append([contig, strand, hi, ni, h, n, gs, ge, human_neighbour, alig_direction, int(round(e[1])), e[2], predicted_gene])
    
     return final_genes
 
