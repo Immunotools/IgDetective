@@ -79,11 +79,11 @@ def VisualizeSummary(locus_df, output_fname):
     x = np.array(range(len(locus_df)))
     colors = [locus_colors[locus_df['Locus'][i]] for i in range(len(locus_df))]
     # lengths
-    sns.barplot(x, locus_df['Length'], palette = colors, ax = axes[0])
+    sns.barplot(x = x, y = locus_df['Length'], palette = colors, ax = axes[0])
     plt.sca(axes[0])
     plt.xticks([], [])
     # fraction productive Vs
-    sns.barplot(x, locus_df['NumProdV'], palette = colors, ax = axes[1])
+    sns.barplot(x = x, y = locus_df['NumProdV'], palette = colors, ax = axes[1])
     plt.sca(axes[1])
     plt.xticks([], [])
     # positions

@@ -70,15 +70,15 @@ class Alignment:
         return self.gene_seq == '' or self.gene_seq[0] == ' '
 
 def SetupAligner(aligner):
-    aligner.match_score = 5
-    aligner.mismatch_score = -9
     aligner.mode = 'global'
-    aligner.target_internal_open_gap_score = -12
-    aligner.target_internal_extend_gap_score = -3
-    aligner.target_end_open_gap_score = -12
-    aligner.target_end_extend_gap_score = -3
-    aligner.query_internal_open_gap_score = -12
-    aligner.query_internal_extend_gap_score = -3
+    aligner.match_score = 2
+    aligner.mismatch_score = 0
+    aligner.target_internal_open_gap_score = -2
+    aligner.target_internal_extend_gap_score = -1
+    aligner.target_end_open_gap_score = -2
+    aligner.target_end_extend_gap_score = -1
+    aligner.query_internal_open_gap_score = -2
+    aligner.query_internal_extend_gap_score = -1
     aligner.query_end_open_gap_score = 0
     aligner.query_end_extend_gap_score = 0
 
