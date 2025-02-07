@@ -56,4 +56,4 @@ In this example, the IGH locus is located on the reverse-complementary strand an
 ## Development
 We are actively working to make IGDetective better. Please report any bugs to GitHub. 
 
-We also welcome your comments and suggestions on IGDetective. Please feel free to send it to Vikram Sirupurapu (vsirupur@ucsd.edu) and/or Yana Safonova (ysafonova@cs.jhu.edu).
+We also welcome your comments and suggestions on IGDetective. Please feel free to send it to Yana Safonova (yana@psu.edu).
