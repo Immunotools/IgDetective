@@ -4,7 +4,8 @@ a tool for annotation of variable (V), diversity (D), and joining (J) immunoglob
 ## System Requirements
 * Anaconda package manager 4.8.4 or higher. To install Bioconda, see the [setup guide](https://bioconda.github.io/user/install.html#install-conda).
 * Minimap2. To install Minimap2, see the [setup guide](https://anaconda.org/bioconda/minimap2).
-* We have benchmarked IGDetective on Linux systems.  
+* We have benchmarked IGDetective on Linux and MacOS systems.
+* **BioPython 1.82 and higher**. Testing on lower BioPython versions is in progress.
 
 ## Usage
 IGDetective takes a genome in FASTA format as an input and operates in three stages:
