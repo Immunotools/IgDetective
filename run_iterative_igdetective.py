@@ -94,7 +94,7 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     txt = os.path.join(igcontig_dir, '__summary.txt')
     if not os.path.exists(txt):
         return
-    df = pd.read_csv(txt, sep = '\t')
+    df = pd.read_csv(txt, sep = '\t', dtype = {'ContigID' : str})
     igh_df = df.loc[df['Locus'] == locus]
     if len(igh_df) == 0:
         return
@@ -133,7 +133,7 @@ def CombineIGGenes(genes_fasta, igdetective_tsv, output_fasta):
         for r in SeqIO.parse(genes_fasta, 'fasta'):
             nucl_seqs.add(str(r.seq))
     if os.path.exists(igdetective_tsv):
-        df = pd.read_csv(igdetective_tsv, sep = '\t')
+        df = pd.read_csv(igdetective_tsv, sep = '\t', dtype = {'reference contig' : str})
         for i in range(len(df)):
             nucl_seqs.add(df['gene sequence'][i])
     reduced_seq_list = []
@@ -232,7 +232,7 @@ def CollectLocusSummary(denovo_dir, iter_dir, locus, output_fname):
             continue
         if not os.path.exists(gene_dict[gene_type]):
             continue
-        df = pd.read_csv(gene_dict[gene_type], sep = '\t')
+        df = pd.read_csv(gene_dict[gene_type], sep = '\t', dtype = {'Contig' : str})
         if gene_type == 'V':
             sum_df = UpdateVGeneDF(df, sum_df)
         else:
