@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def OutputHeatmap(filenames, output_fname):
-    dfs = [pd.read_csv(fname, sep = '\t') for fname in filenames if os.path.exists(fname)]
+    dfs = [pd.read_csv(fname, sep = '\t', dtype = {'Contig' : str}) for fname in filenames if os.path.exists(fname)]
     genes = ['IGHV', 'IGHD', 'IGHJ', 'IGKV', 'IGKJ', 'IGLV', 'IGLJ']
     contigs = []
     for df in dfs:
@@ -38,7 +38,7 @@ def OutputHeatmap(filenames, output_fname):
 def OutputPositionsPerContig(filename, locus, output_dir):
     if not os.path.exists(filename):
         return
-    df = pd.read_csv(filename, sep = '\t')
+    df = pd.read_csv(filename, sep = '\t', dtype = {'Contig' : str})
     contigs = set(df['Contig'])
     color_dict = {('V', True) : '#1F77B4', ('V', False) : '#AEC7E8', 'D' : '#FF7F0F', 'J' : '#2AA02B'}
     strand_dict = {'+' : 1, '-' : -1}
