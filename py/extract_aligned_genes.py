@@ -1,5 +1,6 @@
 import os
 import sys
+import gzip
 import shutil
 import pandas as pd
 from Bio import SeqIO
@@ -139,11 +140,16 @@ def main(genome_fasta, gene_fasta, output_dir):
     if len(position_dict) == 0:
         print('no matches were found')
         return
-
+    
+    if genome_fasta.endswith('.gz'):
+        genome_handle = gzip.open(genome_fasta, 'rt')
+    else:
+        genome_handle = open(genome_fasta, 'r')
     contig_dict = dict()
-    for r in SeqIO.parse(genome_fasta, 'fasta'):
+    for r in SeqIO.parse(genome_handle, 'fasta'):
         if r.id in position_dict:
             contig_dict[r.id] = str(r.seq)
+    genome_handle.close()
 
     genes = []
     for r in SeqIO.parse(gene_fasta, 'fasta'):

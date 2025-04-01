@@ -15,6 +15,8 @@ from multiprocessing import get_context
 
 import extract_aligned_genes as align_utils
 
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #INITIALIZE VARIABLES, default = IGH
 V = 'V'
 D = 'D'
@@ -52,7 +54,8 @@ def InitializeVariables(locus):
 
 #READ DATAFILES
 try:
-    with open('datafiles/motifs', 'rb') as f:   
+    motifs_file = os.path.join(SCRIPT_DIR[:-3], 'datafiles', 'motifs')
+    with open(motifs_file, 'rb') as f:   
         VALID_MOTIFS = pickle.load(f)
 except:
     print("Error: could not find the input data files. Please make sure the IGDetective.py file and datafiles folder are in the same directory")
@@ -130,7 +133,7 @@ input_seq_dict= {rec.id : rec.seq for rec in SeqIO.parse(INPUT_PATH, "fasta")}
 
 canonical_genes = {V : {} , J : {}}
 for gene in (V,J):
-    file_path = 'datafiles/combined_reference_genes/' + LOCUS + gene + '.fa' #'datafiles/human_{}.fasta'.format(gene)
+    file_path = os.path.join(SCRIPT_DIR[:-3], 'datafiles', 'combined_reference_genes', LOCUS + gene + '.fa') #'datafiles/human_{}.fasta'.format(gene)
     canonical_genes[gene] = {rec.id : rec.seq.upper() for rec in SeqIO.parse(file_path, "fasta")}
 
 #DEFINE RSS FINDING METHODS

@@ -1,5 +1,6 @@
 import os
 import sys
+import gzip
 import shutil
 import re
 import numpy as np
@@ -148,7 +149,7 @@ def OutputLoci(contig_id, contig_seq, loci_bounds, output_dir):
 ######################################################
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
-contig_fasta = sys.argv[3]
+contig_file = sys.argv[3]
 
 if os.path.exists(output_dir):
     shutil.rmtree(output_dir)
@@ -181,10 +182,15 @@ for locus, gene in gene_sam_dict:
         combined_matches[contig][(locus, gene)] = compressed_matches
 
 contig_seqs = dict() # contig ID -> seq
-for r in SeqIO.parse(contig_fasta, 'fasta'):
+if contig_file.endswith('.gz'):
+    contig_handle = gzip.open(contig_file, 'rt')
+else:
+    contig_handle = open(contig_file, 'r')
+for r in SeqIO.parse(contig_handle, 'fasta'):
     if r.id not in combined_matches:
         continue
     contig_seqs[r.id] = str(r.seq)
+contig_handle.close()
 
 matrix = []
 annot_matrix = []

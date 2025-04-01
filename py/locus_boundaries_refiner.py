@@ -1,5 +1,6 @@
 import os
 import sys
+import gzip
 import pandas as pd
 import numpy as np
 from Bio import SeqIO
@@ -152,12 +153,17 @@ def main(genome_fasta, input_dir, output_dir):
     contig_set = set(df['Contig'])
     contig_len_dict = dict()
     contig_seq_dict = dict()
-    for r in SeqIO.parse(genome_fasta, 'fasta'):
+    if genome_fasta.endswith('.gz'):
+        genome_fasta_handle = gzip.open(genome_fasta, 'rt')
+    else:
+        genome_fasta_handle = open(genome_fasta, 'r')
+    for r in SeqIO.parse(genome_fasta_handle, 'fasta'):
         contig_id = r.id.replace('|', '_')
         if contig_id not in contig_set:
             continue
         contig_len_dict[contig_id] = len(r.seq)
         contig_seq_dict[contig_id] = str(r.seq)
+    genome_fasta_handle.close()
 
     #### creating summary dataframe
     shift = 10000

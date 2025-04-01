@@ -13,12 +13,13 @@ mplt.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-sys.path.append('py')
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(SCRIPT_DIR, 'py'))
 import extract_aligned_genes as gene_finding_tools
 import visualization_tools as visual_tools
 import locus_boundaries_refiner as locus_refiner
 
-ref_gene_dir = 'datafiles/human_reference_genes'
+ref_gene_dir = os.path.join(SCRIPT_DIR, 'datafiles', 'human_reference_genes')
 
 def CheckPythonVersionFatal():
     if sys.version_info.major != 3:
@@ -63,7 +64,8 @@ def AlignReferenceGenes(align_dir, genome_fasta, ig_gene_dir, output_dir):
 
 def IdentifyIGContigs(igcontig_dir, alignment_dir, output_dir, genome_fasta):
     match_log = igcontig_dir + '.out'
-    os.system('python py/analyze_matches.py ' + alignment_dir + ' ' + igcontig_dir + ' ' + genome_fasta + ' > ' + match_log)
+    AM_SCRIPT_PATH = os.path.join(SCRIPT_DIR, 'py', 'analyze_matches.py')
+    os.system('python ' + AM_SCRIPT_PATH + ' ' + alignment_dir + ' ' + igcontig_dir + ' ' + genome_fasta + ' > ' + match_log)
 
 def GetPositionRange(sorted_positions):
     if len(sorted_positions) == 1:
@@ -123,7 +125,8 @@ def RunIgDetective(igcontig_dir, output_dir, locus = 'IGH'):
     fh.close()
     # running IgDetective
     igdetective_dir = os.path.join(output_dir, 'predicted_genes_' + locus)
-    command_line = 'python py/IGDetective.py -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1 -l ' + locus
+    IGD_PATH = os.path.join(SCRIPT_DIR, 'py', 'IGDetective.py')
+    command_line = 'python ' + IGD_PATH + ' -i ' + fasta + ' -o ' + igdetective_dir + ' -m 1 -l ' + locus
     print('Running: ' + command_line)
     os.system(command_line + ' > ' + os.path.join(output_dir, 'predicted_genes_' + locus + '.out'))
 
@@ -314,5 +317,5 @@ if __name__ == '__main__':
         sys.exit(1)
     genome_fasta = sys.argv[1]
     output_dir = sys.argv[2]
-    ig_gene_dir = 'datafiles/combined_reference_genes' #sys.argv[3]
+    ig_gene_dir = os.path.join(SCRIPT_DIR, "datafiles", "combined_reference_genes") #sys.argv[3]
     main(genome_fasta, output_dir, ig_gene_dir)
