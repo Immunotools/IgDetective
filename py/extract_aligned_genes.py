@@ -118,12 +118,13 @@ def ProcessSamFile(sam_file):
         splits = l.split()
         contig_id = splits[2]
         pos = int(splits[3])
+        code = bool(int(splits[1]) & 0x10) #True if reversed
         if contig_id == '*':
             continue
         if contig_id not in position_dict:
-            position_dict[contig_id] = []
-        if pos not in position_dict[contig_id]:
-            position_dict[contig_id].append(pos)
+            position_dict[contig_id] = list()
+        if [code, pos]  not in position_dict[contig_id]:
+            position_dict[contig_id].append([code, pos])
     return position_dict
 
 def main(genome_fasta, gene_fasta, output_dir):
@@ -158,21 +159,28 @@ def main(genome_fasta, gene_fasta, output_dir):
     for c_id in position_dict:
         contig_seq = contig_dict[c_id]
         prev_pos = -1
-        for pos in sorted(position_dict[c_id]):
-            if pos - prev_pos <= gene_len:
+        prev_code = 100
+        for code, pos, number in sorted(position_dict[c_id]):
+            if (pos - prev_pos <= gene_len) & (prev_code == code):
                 continue
-            fragment = contig_seq[max(0, pos - gene_len) : min(len(contig_seq), pos + gene_len)]
-            fragment_rc = str(Seq(fragment).reverse_complement())
-            alignment, strand = ComputeAlignment(aligner, [fragment, fragment_rc], ['+', '-'], genes)
+            fragment = contig_seq[max(0, pos - gene_len): min(len(contig_seq), pos + gene_len)]
+            #fragment_rc = str(Seq(fragment).reverse_complement())
+            if code:
+                fragment = str(Seq(fragment).reverse_complement())
+                sign = '-'
+            else:
+                sign = '+'
+
+            alignment, strand = ComputeAlignment(aligner, [fragment], [sign], genes)
             if alignment.Empty():
                 continue
             aa_seq = str(Seq(alignment.gene_seq).translate())
-#            if aa_seq.find('*') != -1:
-#                print('non-productive gene')
-#                continue
-#            print('==== ' + c_id + ', pos: ' + str(pos) + ', gene: ' + alignment.gene_id + ', PI: ' + str(alignment.pi))
-#            print(alignment.gene_seq)
-#            print(aa_seq)
+            #            if aa_seq.find('*') != -1:
+            #                print('non-productive gene')
+            #                continue
+            #            print('==== ' + c_id + ', pos: ' + str(pos) + ', gene: ' + alignment.gene_id + ', PI: ' + str(alignment.pi))
+            #            print(alignment.gene_seq)
+            #            print(aa_seq)
             df['Contig'].append(c_id)
             df['Pos'].append(pos)
             df['Seq'].append(alignment.gene_seq)
@@ -182,6 +190,7 @@ def main(genome_fasta, gene_fasta, output_dir):
             df['Productive'].append(aa_seq.find('*') == -1)
             df['Strand'].append(strand)
             prev_pos = pos
+            prev_code = code
 
     df = pd.DataFrame(df)
     df.to_csv(os.path.join(output_dir, 'genes.tsv'), index = False, sep = '\t')
