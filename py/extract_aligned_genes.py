@@ -160,7 +160,7 @@ def main(genome_fasta, gene_fasta, output_dir):
         contig_seq = contig_dict[c_id]
         prev_pos = -1
         prev_code = 100
-        for code, pos, number in sorted(position_dict[c_id]):
+        for code, pos in sorted(position_dict[c_id]):
             if (pos - prev_pos <= gene_len) & (prev_code == code):
                 continue
             fragment = contig_seq[max(0, pos - gene_len): min(len(contig_seq), pos + gene_len)]
