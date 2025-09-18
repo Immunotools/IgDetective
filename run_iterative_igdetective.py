@@ -49,7 +49,7 @@ def GetRange(min_pos, max_pos, seq_len, max_len = 10000000):
     return (max(min_pos - gap, 0), seq_len)
 
 def AlignIgGenes(genome_fasta, ig_gene_fasta, sam_file):
-    os.system('minimap2 -a ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null 2>&1')
+    os.system('minimap2 -ax sr ' + genome_fasta + ' ' + ig_gene_fasta + ' -o ' + sam_file + ' > /dev/null 2>&1')
 
 def AlignReferenceGenes(align_dir, genome_fasta, ig_gene_dir, output_dir):
     ref_gene_dict = dict()

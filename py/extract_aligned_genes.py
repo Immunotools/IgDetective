@@ -132,7 +132,7 @@ def main(genome_fasta, gene_fasta, output_dir):
     print('Running minimap...')
     print('Alignment of IG genes ' + gene_fasta + ' to ' + genome_fasta)
     sam_file = os.path.join(output_dir, 'alignment.sam')
-    os.system('minimap2 -a ' + genome_fasta + ' ' + gene_fasta + ' -o ' + sam_file + '> /dev/null 2>&1')
+    os.system('minimap2 -ax sr ' + genome_fasta + ' ' + gene_fasta + ' -o ' + sam_file + '> /dev/null 2>&1')
 
     print('Processing SAM file...')
     position_dict = ProcessSamFile(sam_file)
