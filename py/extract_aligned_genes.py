@@ -90,9 +90,16 @@ def ComputeAlignment(aligner, query_list, strand_list, gene_seqs):
     for query, strand in zip(query_list, strand_list):
         for gene in gene_seqs:
             alignments = aligner.align(query, gene.seq)
-            if len(alignments) == 0:
+            no_alignments = True
+            for a in alignments:
+                no_alignments = False
+                break
+            if no_alignments:
                 continue
-            alignment = BioAlign(alignments[0])
+            alignment = ''
+            for alignment in alignments:
+                break
+            alignment = BioAlign(alignment)
             if alignment.PI() >= best_pi:
                 best_pi = alignment.PI()
                 best_alignment = alignment
@@ -126,13 +133,13 @@ def ProcessSamFile(sam_file):
             position_dict[contig_id].append(pos)
     return position_dict
 
-def main(genome_fasta, gene_fasta, output_dir):
+def main(genome_fasta, gene_fasta, output_dir, index_file):
     PrepareOutputDir(output_dir)
 
     print('Running minimap...')
     print('Alignment of IG genes ' + gene_fasta + ' to ' + genome_fasta)
     sam_file = os.path.join(output_dir, 'alignment.sam')
-    os.system('minimap2 -ax sr ' + genome_fasta + ' ' + gene_fasta + ' -o ' + sam_file + '> /dev/null 2>&1')
+    os.system('minimap2 -ax sr ' + index_file + ' ' + gene_fasta + ' -o ' + sam_file + '> /dev/null 2>&1')
 
     print('Processing SAM file...')
     position_dict = ProcessSamFile(sam_file)
@@ -194,11 +201,11 @@ def main(genome_fasta, gene_fasta, output_dir):
     fh.close()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
        print('Invalid arguments')
-       print('python extract_aligned_genes.py genome.fasta reference_IG_genes.fasta output_dir')
+       print('python extract_aligned_genes.py genome.fasta reference_IG_genes.fasta output_dir index_file')
        sys.exit(1)
     genome_fasta = sys.argv[1]
     gene_fasta = sys.argv[2]
     output_dir = sys.argv[3]
-    main(genome_fasta, gene_fasta, output_dir)
+    main(genome_fasta, gene_fasta, output_dir, index_file)

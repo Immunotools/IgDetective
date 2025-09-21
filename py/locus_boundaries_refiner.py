@@ -74,7 +74,7 @@ def ComputeSummaryDF(dfs, contig_len_dict, shift):
 def VisualizeSummary(locus_df, output_fname):
     if len(locus_df) == 0:
         return
-    locus_colors = {'IGH' : '#9367BD', 'IGK' : 'orange', 'IGL' : '#2AA02B', 'TRA' : '#D62727', 'TRB' : '#1F77B4', 'TRG' : '#E377C1'}
+    locus_colors = {'IGH' : '#9367BD', 'IGK' : 'orange', 'IGL' : '#2AA02B', 'TRA' : '#D62727', 'TRB' : '#1F77B4', 'TRG' : '#E377C1', 'IGS' : 'gray'}
     fig, axes = plt.subplots(nrows = 3, figsize = (15, 10))
     x = np.array(range(len(locus_df)))
     colors = [locus_colors[locus_df['Locus'][i]] for i in range(len(locus_df))]
@@ -145,7 +145,7 @@ def VisualizeGenePositions(gene_df, locus_df, output_dir):
         plt.close()
 
 def main(genome_fasta, input_dir, output_dir):
-    files = ['combined_genes_IGH.txt', 'combined_genes_IGK.txt', 'combined_genes_IGL.txt', 'combined_genes_TRA.txt', 'combined_genes_TRB.txt', 'combined_genes_TRG.txt']
+    files = ['combined_genes_IGH.txt', 'combined_genes_IGK.txt', 'combined_genes_IGL.txt', 'combined_genes_TRA.txt', 'combined_genes_TRB.txt', 'combined_genes_TRG.txt', 'combined_genes_IGS.txt']
     dfs = [pd.read_csv(os.path.join(input_dir, fname), sep = '\t', dtype = {'Contig' : str}) for fname in files]
     df = pd.concat(dfs)
     #### reading contigs and contig lengths

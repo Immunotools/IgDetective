@@ -40,6 +40,9 @@ def InitializeVariables(locus):
     if locus == 'IGL':
         SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}    
         GENE_TYPES_TOFIND = [V,J]
+    if locus == 'IGS':
+        SPACER_LENGTH = {V:23, DL:12, DR:23, J:12}
+        GENE_TYPES_TOFIND = [V,J]
     if locus == 'TRA':
         SPACER_LENGTH = {V:23, J:12}
         GENE_TYPES_TOFIND = [V,J]
@@ -91,7 +94,7 @@ try:
             force_output = False
 
         elif currentArgument in ("-l", "--locus"):
-            if currentValue not in ['IGH', 'IGK', 'IGL', 'TRA', 'TRB', 'TRG']:
+            if currentValue not in ['IGH', 'IGK', 'IGL', 'IGS', 'TRA', 'TRB', 'TRG']:
                 print('Incorrect locus argument: ' + currentValue)
                 sys.exit(1)
             LOCUS = currentValue
